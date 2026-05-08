@@ -33,7 +33,7 @@ public class AnalyticsFragment extends Fragment {
     private DatabaseHelper db;
     private SessionManager session;
     private int weekOffset = 0;
-    private TextView tvWeekRange, tvWeekLabel;
+    private TextView tvWeekRange, tvWeekLabel, tvWeekWorkouts, tvWeekMinutes, tvCheckinTitle;
     private String[] weekDates = new String[7];
 
     @Nullable
@@ -59,6 +59,9 @@ public class AnalyticsFragment extends Fragment {
 
         tvWeekRange = view.findViewById(R.id.tv_week_range);
         tvWeekLabel = view.findViewById(R.id.tv_week_label);
+        tvWeekWorkouts = view.findViewById(R.id.tv_week_workouts);
+        tvWeekMinutes = view.findViewById(R.id.tv_week_minutes);
+        tvCheckinTitle = view.findViewById(R.id.tv_checkin_title);
         View layoutWeekRange = view.findViewById(R.id.layout_week_range);
 
         // 点击日期区间 → 弹日期选择器
@@ -74,20 +77,21 @@ public class AnalyticsFragment extends Fragment {
                 int nowWeek = now.get(java.util.Calendar.WEEK_OF_YEAR);
                 int yearDiff = selected.get(java.util.Calendar.YEAR) - now.get(java.util.Calendar.YEAR);
                 weekOffset = (yearDiff * 52) + (selectedWeek - nowWeek);
-                refreshWeek(); setupCheckin(view); setupChart(view);
+                refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view);
             }, cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH),
                     cal.get(java.util.Calendar.DAY_OF_MONTH)).show();
         });
 
         view.findViewById(R.id.btn_prev_week).setOnClickListener(v -> {
-            weekOffset--; refreshWeek(); setupCheckin(view); setupChart(view);
+            weekOffset--; refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view);
         });
         view.findViewById(R.id.btn_next_week).setOnClickListener(v -> {
-            if (weekOffset < 0) { weekOffset++; refreshWeek(); setupCheckin(view); setupChart(view); }
+            if (weekOffset < 0) { weekOffset++; refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); }
         });
 
         refreshWeek();
         setupCheckin(view);
+        setupWeekStats(view);
         setupChart(view);
     }
 
@@ -134,11 +138,31 @@ public class AnalyticsFragment extends Fragment {
                 weekOffset = 0;
                 refreshWeek();
                 setupCheckin(getView());
+                setupWeekStats(getView());
                 setupChart(getView());
             });
             ((FrameLayout) getView()).addView(btnToday);
         }
         if (btnToday != null) btnToday.setVisibility(weekOffset == 0 ? View.GONE : View.VISIBLE);
+
+        if (weekOffset == 0) tvCheckinTitle.setText("本周打卡");
+        else if (weekOffset == -1) tvCheckinTitle.setText("上周打卡");
+        else tvCheckinTitle.setText(Math.abs(weekOffset) + "周前打卡");
+    }
+
+    private void setupWeekStats(View view) {
+        List<int[]> weekly = db.getWeeklyMinutesForDates(session.getUserId(), weekDates);
+        int count = 0, totalMins = 0;
+        for (int[] entry : weekly) {
+            if (entry[1] > 0) count++;
+            totalMins += entry[1];
+        }
+        tvWeekWorkouts.setText(String.valueOf(count));
+        if (totalMins >= 60) {
+            tvWeekMinutes.setText((totalMins / 60) + "h " + (totalMins % 60) + "min");
+        } else {
+            tvWeekMinutes.setText(totalMins + "min");
+        }
     }
 
     private void setupCheckin(View view) {
@@ -259,6 +283,7 @@ public class AnalyticsFragment extends Fragment {
             ((TextView) getView().findViewById(R.id.tv_total_hours)).setText((totalMins / 60) + "h " + (totalMins % 60) + "min");
             refreshWeek();
             setupCheckin(getView());
+            setupWeekStats(getView());
             setupChart(getView());
         }
     }
