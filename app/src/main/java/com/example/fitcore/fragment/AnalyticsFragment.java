@@ -305,7 +305,7 @@ public class AnalyticsFragment extends Fragment {
             @Override
             public void onValueSelected(com.github.mikephil.charting.data.Entry e, Highlight h) {
                 int idx = (int) e.getX();
-                if (idx >= 0 && idx < 7) showDayRecordsSheet(idx);
+                if (idx >= 0 && idx < 7) showDayRecordsSheet(idx, chart);
             }
             @Override public void onNothingSelected() {}
         });
@@ -313,9 +313,10 @@ public class AnalyticsFragment extends Fragment {
         chart.invalidate();
     }
 
-    private void showDayRecordsSheet(int dayIndex) {
+    private void showDayRecordsSheet(int dayIndex, BarChart chart) {
         String date = weekDates[dayIndex];
         String[] labelTexts = {"一","二","三","四","五","六","日"};
+        String[] feelEmoji = {"", "😫", "😕", "😐", "😊", "🔥"};
 
         BottomSheetDialog sheet = new BottomSheetDialog(requireContext());
         View content = LayoutInflater.from(requireContext())
@@ -360,7 +361,9 @@ public class AnalyticsFragment extends Fragment {
                 tvType.setTypeface(null, android.graphics.Typeface.BOLD);
 
                 TextView tvInfo = new TextView(requireContext());
-                tvInfo.setText(r.getDurationMinutes() + "分钟 · 体感 " + r.getFeeling() + "/5");
+                int f = r.getFeeling();
+                String emoji = (f >= 1 && f <= 5) ? feelEmoji[f] : "";
+                tvInfo.setText(r.getDurationMinutes() + "分钟 · 体感 " + emoji + " " + f + "/5");
                 tvInfo.setTextColor(Color.parseColor("#AAAAAA"));
                 tvInfo.setTextSize(12);
                 tvInfo.setPadding(0, dp(4), 0, 0);
@@ -372,6 +375,7 @@ public class AnalyticsFragment extends Fragment {
         }
 
         sheet.setContentView(content);
+        sheet.setOnDismissListener(d -> chart.highlightValue(null));
         sheet.show();
     }
 
