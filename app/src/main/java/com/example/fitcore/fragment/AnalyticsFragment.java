@@ -59,7 +59,7 @@ public class AnalyticsFragment extends Fragment {
         {"其他运动", "自定义","拳击","滑板","高尔夫","滑雪","武术","射箭","击剑","飞镖","摔跤","跆拳道","滑雪板","骑马","皮划艇","冲浪","潜水","溜冰","跳伞","钓鱼","龙舟"},
     };
     private static final String[] CAT_EMOJI = {"🏃", "💪", "🧘", "⚽", "➕"};
-    private static final int[] CAT_COLORS = {0xFFCCFF00, 0xFFFF4444, 0xFF4488FF, 0xFFFFAA00, 0xFF888888};
+    private static final int[] CAT_COLORS = {0xFF7CB342, 0xFFEF5350, 0xFF42A5F5, 0xFFFFA726, 0xFF9E9E9E};
     private String[] weekDates = new String[7];
 
     @Nullable
@@ -307,9 +307,9 @@ public class AnalyticsFragment extends Fragment {
 
         for (int i = 0; i < 7; i++) {
             if (isCurrentWeek && i == todayIdx) {
-                barColors.add(Color.parseColor("#CCFF00"));
+                barColors.add(Color.parseColor("#7CB342"));
             } else {
-                barColors.add(Color.parseColor("#44CCFF00"));
+                barColors.add(Color.parseColor("#337CB342"));
             }
         }
 
@@ -332,7 +332,7 @@ public class AnalyticsFragment extends Fragment {
             TextView tv = (TextView) chartDayLabels.getChildAt(i);
             tv.setText(labelTexts[i]);
             tv.setTextColor(isCurrentWeek && i == todayIdx
-                    ? Color.parseColor("#CCFF00") : Color.parseColor("#888888"));
+                    ? Color.parseColor("#7CB342") : Color.parseColor("#888888"));
         }
 
         // 点击柱子 → 弹出当天记录
@@ -579,16 +579,15 @@ public class AnalyticsFragment extends Fragment {
     }
 
     private void setupDailyPie(View view) {
-        String today = weekDates[6];
-        java.util.Calendar cal = java.util.Calendar.getInstance();
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
-        // 只有当天且是本周时才显示
-        if (weekOffset != 0) {
-            dailyPieChart.setVisibility(View.GONE);
-            return;
+        String realToday = sdf.format(java.util.Calendar.getInstance().getTime());
+
+        // 只有当天在本周范围内才显示
+        boolean todayInView = false;
+        for (String d : weekDates) {
+            if (d.equals(realToday)) { todayInView = true; break; }
         }
-        String realToday = sdf.format(cal.getTime());
-        if (!today.equals(realToday)) {
+        if (!todayInView) {
             dailyPieChart.setVisibility(View.GONE);
             return;
         }
