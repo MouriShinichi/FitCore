@@ -151,11 +151,15 @@ public class AnalyticsFragment extends Fragment {
     }
 
     private void setupWeekStats(View view) {
-        List<int[]> weekly = db.getWeeklyMinutesForDates(session.getUserId(), weekDates);
+        java.util.Set<String> dateSet = new java.util.HashSet<>();
+        for (String d : weekDates) dateSet.add(d);
         int count = 0, totalMins = 0;
-        for (int[] entry : weekly) {
-            if (entry[1] > 0) count++;
-            totalMins += entry[1];
+        for (com.example.fitcore.model.WorkoutRecord r : db.getRecordsByUser(session.getUserId())) {
+            if (r.getRecordedAt() != null && r.getRecordedAt().length() >= 10
+                    && dateSet.contains(r.getRecordedAt().substring(0, 10))) {
+                count++;
+                totalMins += r.getDurationMinutes();
+            }
         }
         tvWeekWorkouts.setText(String.valueOf(count));
         if (totalMins >= 60) {
