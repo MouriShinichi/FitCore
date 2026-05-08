@@ -24,8 +24,12 @@ import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
+import com.github.mikephil.charting.highlight.Highlight;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class AnalyticsFragment extends Fragment {
@@ -34,6 +38,7 @@ public class AnalyticsFragment extends Fragment {
     private SessionManager session;
     private int weekOffset = 0;
     private TextView tvWeekRange, tvWeekLabel, tvWeekWorkouts, tvWeekMinutes, tvCheckinTitle;
+    private LinearLayout chartDayLabels;
     private String[] weekDates = new String[7];
 
     @Nullable
@@ -62,6 +67,7 @@ public class AnalyticsFragment extends Fragment {
         tvWeekWorkouts = view.findViewById(R.id.tv_week_workouts);
         tvWeekMinutes = view.findViewById(R.id.tv_week_minutes);
         tvCheckinTitle = view.findViewById(R.id.tv_checkin_title);
+        chartDayLabels = view.findViewById(R.id.chart_day_labels);
         View layoutWeekRange = view.findViewById(R.id.layout_week_range);
 
         // 点击日期区间 → 弹日期选择器
@@ -239,7 +245,7 @@ public class AnalyticsFragment extends Fragment {
         XAxis xAxis = chart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(false);
-        xAxis.setTextColor(Color.parseColor("#888888"));
+        xAxis.setDrawLabels(false);
         xAxis.setAxisLineColor(Color.parseColor("#333333"));
 
         YAxis leftAxis = chart.getAxisLeft();
@@ -250,18 +256,30 @@ public class AnalyticsFragment extends Fragment {
 
         chart.getAxisRight().setEnabled(false);
 
+        // 今天索引
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        int todayIdx = (cal.get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7;
+        boolean isCurrentWeek = (weekOffset == 0);
+
         List<int[]> weekly = db.getWeeklyMinutesForDates(session.getUserId(), weekDates);
-        String[] labels = new String[]{"一", "二", "三", "四", "五", "六", "日"};
         List<BarEntry> entries = new ArrayList<>();
+        List<Integer> barColors = new ArrayList<>();
 
         for (int i = 0; i < 7 && i < weekly.size(); i++) {
             entries.add(new BarEntry(i, weekly.get(i)[1]));
         }
-        // 填充到 7 天
         while (entries.size() < 7) entries.add(new BarEntry(entries.size(), 0));
 
+        for (int i = 0; i < 7; i++) {
+            if (isCurrentWeek && i == todayIdx) {
+                barColors.add(Color.parseColor("#CCFF00"));
+            } else {
+                barColors.add(Color.parseColor("#44CCFF00"));
+            }
+        }
+
         BarDataSet dataSet = new BarDataSet(entries, "Minutes");
-        dataSet.setColor(Color.parseColor("#CCFF00"));
+        dataSet.setColors(barColors);
         dataSet.setDrawValues(true);
         dataSet.setValueTextColor(Color.parseColor("#FFFFFF"));
         dataSet.setValueTextSize(10f);
@@ -270,10 +288,91 @@ public class AnalyticsFragment extends Fragment {
         data.setBarWidth(0.5f);
 
         chart.setData(data);
-        xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
         xAxis.setGranularity(1f);
         chart.animateY(500);
+
+        // 自定义星期标签
+        String[] labelTexts = {"一","二","三","四","五","六","日"};
+        for (int i = 0; i < chartDayLabels.getChildCount() && i < 7; i++) {
+            TextView tv = (TextView) chartDayLabels.getChildAt(i);
+            tv.setText(labelTexts[i]);
+            tv.setTextColor(isCurrentWeek && i == todayIdx
+                    ? Color.parseColor("#CCFF00") : Color.parseColor("#888888"));
+        }
+
+        // 点击柱子 → 弹出当天记录
+        chart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+            @Override
+            public void onValueSelected(com.github.mikephil.charting.data.Entry e, Highlight h) {
+                int idx = (int) e.getX();
+                if (idx >= 0 && idx < 7) showDayRecordsSheet(idx);
+            }
+            @Override public void onNothingSelected() {}
+        });
+
         chart.invalidate();
+    }
+
+    private void showDayRecordsSheet(int dayIndex) {
+        String date = weekDates[dayIndex];
+        String[] labelTexts = {"一","二","三","四","五","六","日"};
+
+        BottomSheetDialog sheet = new BottomSheetDialog(requireContext());
+        View content = LayoutInflater.from(requireContext())
+                .inflate(R.layout.bottom_sheet_day_records, null);
+
+        String title = date.substring(5) + " 周" + labelTexts[dayIndex];
+        ((TextView) content.findViewById(R.id.bs_day_title)).setText(title);
+
+        LinearLayout container = content.findViewById(R.id.bs_records_container);
+
+        List<com.example.fitcore.model.WorkoutRecord> dayRecords = new ArrayList<>();
+        for (com.example.fitcore.model.WorkoutRecord r : db.getRecordsByUser(session.getUserId())) {
+            if (r.getRecordedAt() != null && r.getRecordedAt().length() >= 10
+                    && r.getRecordedAt().substring(0, 10).equals(date)) {
+                dayRecords.add(r);
+            }
+        }
+
+        if (dayRecords.isEmpty()) {
+            TextView empty = new TextView(requireContext());
+            empty.setText("当天暂无运动记录");
+            empty.setTextColor(Color.parseColor("#888888"));
+            empty.setTextSize(14);
+            empty.setPadding(0, dp(16), 0, 0);
+            container.addView(empty);
+        } else {
+            for (com.example.fitcore.model.WorkoutRecord r : dayRecords) {
+                LinearLayout item = new LinearLayout(requireContext());
+                item.setOrientation(LinearLayout.VERTICAL);
+                item.setPadding(dp(14), dp(10), dp(14), dp(10));
+                item.setBackgroundResource(R.drawable.bg_card);
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT);
+                lp.topMargin = dp(6);
+                item.setLayoutParams(lp);
+
+                TextView tvType = new TextView(requireContext());
+                tvType.setText(r.getType());
+                tvType.setTextColor(Color.parseColor("#FFFFFF"));
+                tvType.setTextSize(15);
+                tvType.setTypeface(null, android.graphics.Typeface.BOLD);
+
+                TextView tvInfo = new TextView(requireContext());
+                tvInfo.setText(r.getDurationMinutes() + "分钟 · 体感 " + r.getFeeling() + "/5");
+                tvInfo.setTextColor(Color.parseColor("#AAAAAA"));
+                tvInfo.setTextSize(12);
+                tvInfo.setPadding(0, dp(4), 0, 0);
+
+                item.addView(tvType);
+                item.addView(tvInfo);
+                container.addView(item);
+            }
+        }
+
+        sheet.setContentView(content);
+        sheet.show();
     }
 
     @Override
