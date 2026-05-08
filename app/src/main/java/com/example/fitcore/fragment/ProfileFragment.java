@@ -2,6 +2,8 @@ package com.example.fitcore.fragment;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -40,7 +42,10 @@ public class ProfileFragment extends Fragment {
     private DatabaseHelper db;
     private SessionManager session;
     private ImageView ivAvatar;
+    private ImageView ivProfileBackground;
+    private ImageView ivBgEdit;
     private ActivityResultLauncher<String> pickImageLauncher;
+    private ActivityResultLauncher<String> pickBgImageLauncher;
 
     private File getAvatarFile() {
         return new File(requireContext().getFilesDir(), "avatar.jpg");
@@ -81,6 +86,24 @@ public class ProfileFragment extends Fragment {
                         loadAvatar();
                     }
                 });
+
+        // ----- 背景图片 -----
+        ivProfileBackground = view.findViewById(R.id.iv_profile_background);
+        ivBgEdit = view.findViewById(R.id.iv_bg_edit);
+
+        pickBgImageLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        saveBackgroundToFile(uri);
+                        loadBackground();
+                    }
+                });
+
+        View headerArea = view.findViewById(R.id.layout_profile_header);
+        headerArea.setOnClickListener(v -> onBackgroundClick());
+        ivBgEdit.setOnClickListener(v -> onBackgroundClick());
+        loadBackground();
 
         ivAvatar.setOnClickListener(v -> onAvatarClick());
         loadAvatar();
@@ -270,7 +293,181 @@ public class ProfileFragment extends Fragment {
         super.onResume();
         if (getView() != null) {
             loadAvatar();
+            loadBackground();
             loadUserInfo(getView());
         }
+    }
+
+    // ==================== 背景图片 ====================
+
+    private File getBackgroundFile() {
+        return new File(requireContext().getFilesDir(), "background.jpg");
+    }
+
+    private boolean hasBackground() {
+        return getBackgroundFile().exists();
+    }
+
+    private void onBackgroundClick() {
+        if (!hasBackground()) {
+            showBgPickConfirm();
+            return;
+        }
+
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_background_options, null);
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(dialogView)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        dialogView.findViewById(R.id.btn_remove).setOnClickListener(v -> {
+            dialog.dismiss();
+            removeBackground();
+        });
+        dialogView.findViewById(R.id.btn_view).setOnClickListener(v -> {
+            dialog.dismiss();
+            viewBackground();
+        });
+        dialogView.findViewById(R.id.btn_change).setOnClickListener(v -> {
+            dialog.dismiss();
+            showBgPickConfirm();
+        });
+
+        dialog.show();
+    }
+
+    private void showBgPickConfirm() {
+        View dlg = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_confirm, null);
+        ((ImageView) dlg.findViewById(R.id.dialog_icon))
+                .setImageResource(android.R.drawable.ic_menu_gallery);
+        ((TextView) dlg.findViewById(R.id.dialog_title)).setText("选择背景");
+        ((TextView) dlg.findViewById(R.id.dialog_message)).setText("将从手机相册选择图片");
+        TextView btnPos = dlg.findViewById(R.id.dialog_positive);
+        TextView btnNeg = dlg.findViewById(R.id.dialog_negative);
+        btnPos.setText("确定");
+        btnNeg.setText("取消");
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(dlg).setCancelable(false).create();
+        if (dialog.getWindow() != null)
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+
+        btnPos.setOnClickListener(v -> { dialog.dismiss(); pickBgImageLauncher.launch("image/*"); });
+        btnNeg.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
+
+    private void saveBackgroundToFile(Uri uri) {
+        File file = getBackgroundFile();
+        try (InputStream in = requireContext().getContentResolver().openInputStream(uri);
+             FileOutputStream out = new FileOutputStream(file)) {
+            byte[] buf = new byte[8192];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void loadBackground() {
+        if (hasBackground()) {
+            int targetW = ivProfileBackground.getWidth();
+            int targetH = ivProfileBackground.getHeight();
+            if (targetW <= 0) {
+                targetW = getResources().getDisplayMetrics().widthPixels;
+                targetH = dp(200);
+            }
+            Bitmap blurred = decodeAndBlurBackground(getBackgroundFile(), targetW, targetH);
+            if (blurred != null) {
+                ivProfileBackground.setImageBitmap(blurred);
+                ivProfileBackground.setVisibility(View.VISIBLE);
+            }
+        } else {
+            ivProfileBackground.setImageDrawable(null);
+            ivProfileBackground.setVisibility(View.GONE);
+        }
+    }
+
+    private void removeBackground() {
+        getBackgroundFile().delete();
+        loadBackground();
+    }
+
+    private void viewBackground() {
+        File file = getBackgroundFile();
+        if (!file.exists()) return;
+
+        FrameLayout fl = new FrameLayout(requireContext());
+        fl.setBackgroundColor(0xEE000000);
+
+        ImageView iv = new ImageView(requireContext());
+        iv.setImageURI(Uri.fromFile(file));
+        iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        int pad = dp(8);
+        iv.setPadding(pad, pad, pad, dp(80));
+        FrameLayout.LayoutParams ivlp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        fl.addView(iv, ivlp);
+
+        TextView btnClose = new TextView(requireContext());
+        btnClose.setText("✕");
+        btnClose.setTextColor(0xFFFFFFFF);
+        btnClose.setTextSize(22);
+        btnClose.setGravity(Gravity.CENTER);
+        btnClose.setBackgroundResource(R.drawable.bg_card);
+        btnClose.setPadding(0, 0, 0, 0);
+        FrameLayout.LayoutParams blp = new FrameLayout.LayoutParams(dp(40), dp(40));
+        blp.gravity = Gravity.TOP | Gravity.END;
+        blp.topMargin = dp(48);
+        blp.rightMargin = dp(16);
+        fl.addView(btnClose, blp);
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(fl)
+                .setCancelable(true)
+                .create();
+        if (dialog.getWindow() != null)
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
+
+    private Bitmap decodeAndBlurBackground(File file, int targetWidth, int targetHeight) {
+        BitmapFactory.Options opts = new BitmapFactory.Options();
+        opts.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(file.getAbsolutePath(), opts);
+
+        int sampleSize = 1;
+        int maxDim = Math.max(opts.outWidth, opts.outHeight);
+        while (maxDim / sampleSize > 800) {
+            sampleSize *= 2;
+        }
+        opts.inSampleSize = sampleSize;
+        opts.inJustDecodeBounds = false;
+
+        Bitmap source = BitmapFactory.decodeFile(file.getAbsolutePath(), opts);
+        if (source == null) return null;
+
+        float aspect = (float) source.getWidth() / source.getHeight();
+        int smallW = 50;
+        int smallH = Math.round(smallW / aspect);
+        if (smallH <= 0) smallH = 1;
+        Bitmap small = Bitmap.createScaledBitmap(source, smallW, smallH, true);
+
+        int outW = targetWidth > 0 ? targetWidth : source.getWidth();
+        int outH = targetHeight > 0 ? targetHeight : source.getHeight();
+        Bitmap blurred = Bitmap.createScaledBitmap(small, outW, outH, true);
+
+        if (small != blurred && small != source) small.recycle();
+        if (source != blurred) source.recycle();
+
+        return blurred;
     }
 }
