@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:clickable="false"
+    android:focusable="false">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="FIT"
+        android:textSize="100sp"
+        android:textStyle="bold"
+        android:textColor="@color/accent"
+        android:alpha="0.03"
+        android:rotation="-20"
+        android:clickable="false"
+        android:focusable="false" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CORE"
+        android:textSize="100sp"
+        android:textStyle="bold"
+        android:textColor="@color/accent"
+        android:alpha="0.03"
+        android:rotation="-20"
+        android:clickable="false"
+        android:focusable="false" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="FITNESS"
+        android:textSize="100sp"
+        android:textStyle="bold"
+        android:textColor="@color/accent"
+        android:alpha="0.03"
+        android:rotation="-20"
+        android:clickable="false"
+        android:focusable="false" />
+
+</LinearLayout>

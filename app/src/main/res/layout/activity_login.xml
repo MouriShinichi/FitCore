@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background">
+
+<ScrollView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="32dp">
+
+        <!-- 顶部 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:layout_width="90dp"
+                android:layout_height="90dp"
+                android:background="@drawable/bg_login_icon">
+                <ImageView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_dumbbell" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="FITCORE"
+                android:textColor="@color/accent"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.15" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="努力训练 · 活得强大"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- 登录/注册切换 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:layout_marginTop="36dp"
+            android:background="@drawable/bg_toggle"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tab_login"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="登录"
+                android:textColor="@color/black"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:background="@drawable/bg_toggle_active"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/tab_signup"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="注册"
+                android:textColor="@color/text_secondary"
+                android:textSize="15sp"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+        <!-- 警告 -->
+        <LinearLayout
+            android:id="@+id/layout_warning"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginStart="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="14dp" android:layout_height="14dp"
+                android:src="@android:drawable/ic_dialog_alert"
+                android:tint="@color/error" />
+
+            <TextView
+                android:id="@+id/tv_warning"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:text="用户名已存在"
+                android:textColor="@color/error"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- 姓名（仅注册） -->
+        <LinearLayout
+            android:id="@+id/layout_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone"
+            android:background="@drawable/bg_card"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="2dp">
+
+            <ImageView
+                android:layout_width="20dp" android:layout_height="20dp"
+                android:src="@drawable/ic_user_circle"
+                android:alpha="0.6" />
+
+            <EditText
+                android:id="@+id/et_name"
+                android:layout_width="0dp"
+                android:layout_height="46dp"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="姓名"
+                android:textColorHint="@color/text_muted"
+                android:inputType="textPersonName"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <!-- 用户名 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_card"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="2dp">
+
+            <ImageView
+                android:layout_width="20dp" android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_myplaces"
+                android:alpha="0.6" />
+
+            <EditText
+                android:id="@+id/et_username"
+                android:layout_width="0dp"
+                android:layout_height="46dp"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="用户名"
+                android:textColorHint="@color/text_muted"
+                android:inputType="text"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <!-- 密码 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_card"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="2dp">
+
+            <ImageView
+                android:layout_width="20dp" android:layout_height="20dp"
+                android:src="@android:drawable/ic_lock_idle_lock"
+                android:alpha="0.6" />
+
+            <EditText
+                android:id="@+id/et_password"
+                android:layout_width="0dp"
+                android:layout_height="46dp"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="密码"
+                android:textColorHint="@color/text_muted"
+                android:inputType="textPassword"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <!-- 确认密码（仅注册） -->
+        <LinearLayout
+            android:id="@+id/layout_confirm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone"
+            android:background="@drawable/bg_card"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="2dp">
+
+            <ImageView
+                android:layout_width="20dp" android:layout_height="20dp"
+                android:src="@android:drawable/ic_lock_idle_lock"
+                android:alpha="0.6" />
+
+            <EditText
+                android:id="@+id/et_confirm"
+                android:layout_width="0dp"
+                android:layout_height="46dp"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="确认密码"
+                android:textColorHint="@color/text_muted"
+                android:inputType="textPassword"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <!-- 按钮 -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_action"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="28dp"
+            android:enabled="false"
+            android:background="@drawable/bg_btn_disabled"
+            android:text="登录"
+            android:textColor="@color/text_muted"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <!-- 底部装饰 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="36dp"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
+                <View android:layout_width="32dp" android:layout_height="1dp" android:background="@color/border" />
+                <View android:layout_width="5dp" android:layout_height="5dp" android:layout_marginHorizontal="8dp" android:background="@drawable/bg_accent_circle" android:alpha="0.5" />
+                <View android:layout_width="32dp" android:layout_height="1dp" android:background="@color/border" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <LinearLayout android:layout_width="48dp" android:layout_height="48dp" android:gravity="center" android:background="@drawable/bg_card" android:layout_marginHorizontal="6dp">
+                    <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_run" android:alpha="0.5" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="48dp" android:layout_height="48dp" android:gravity="center" android:background="@drawable/bg_card" android:layout_marginHorizontal="6dp">
+                    <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_flame" android:alpha="0.5" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="48dp" android:layout_height="48dp" android:gravity="center" android:background="@drawable/bg_card" android:layout_marginHorizontal="6dp">
+                    <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_shield" android:alpha="0.5" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="48dp" android:layout_height="48dp" android:gravity="center" android:background="@drawable/bg_card" android:layout_marginHorizontal="6dp">
+                    <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_trophy" android:alpha="0.5" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="Train Hard · Live Strong"
+                android:textColor="@color/text_primary"
+                android:textSize="11sp"
+                android:alpha="0.5" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
+
+    <include layout="@layout/watermark_bg" />
+
+</FrameLayout>

@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="运动记录"
+        android:textColor="@color/text_primary"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <!-- 日期筛选 -->
+    <LinearLayout
+        android:id="@+id/filter_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:orientation="horizontal">
+
+        <TextView android:id="@+id/filter_all" android:layout_width="0dp"
+            android:layout_height="34dp" android:layout_weight="1" android:layout_marginEnd="4dp"
+            android:gravity="center" android:text="全部" android:textColor="@color/black"
+            android:textSize="12sp" android:textStyle="bold"
+            android:background="@drawable/bg_accent_btn"
+            android:clickable="true" android:focusable="true" />
+
+        <TextView android:id="@+id/filter_week" android:layout_width="0dp"
+            android:layout_height="34dp" android:layout_weight="1" android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp" android:gravity="center" android:text="本周"
+            android:textColor="@color/text_secondary" android:textSize="12sp"
+            android:background="@drawable/bg_card"
+            android:clickable="true" android:focusable="true" />
+
+        <TextView android:id="@+id/filter_month" android:layout_width="0dp"
+            android:layout_height="34dp" android:layout_weight="1" android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp" android:gravity="center" android:text="本月"
+            android:textColor="@color/text_secondary" android:textSize="12sp"
+            android:background="@drawable/bg_card"
+            android:clickable="true" android:focusable="true" />
+
+        <TextView android:id="@+id/filter_3month" android:layout_width="0dp"
+            android:layout_height="34dp" android:layout_weight="1" android:layout_marginStart="4dp"
+            android:gravity="center" android:text="近三月"
+            android:textColor="@color/text_secondary" android:textSize="12sp"
+            android:background="@drawable/bg_card"
+            android:clickable="true" android:focusable="true" />
+
+        <TextView android:id="@+id/filter_date" android:layout_width="0dp"
+            android:layout_height="34dp" android:layout_weight="1" android:layout_marginStart="4dp"
+            android:gravity="center" android:text="📅自选"
+            android:textColor="@color/text_secondary" android:textSize="12sp"
+            android:background="@drawable/bg_card"
+            android:clickable="true" android:focusable="true" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_history"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:layout_weight="1" />
+
+    <!-- 管理栏 -->
+    <LinearLayout
+        android:id="@+id/layout_manage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="end"
+        android:orientation="horizontal"
+        android:paddingHorizontal="0dp">
+
+        <TextView
+            android:id="@+id/btn_manage"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:paddingHorizontal="14dp"
+            android:text="管理"
+            android:textColor="@color/accent"
+            android:textSize="13sp"
+            android:background="@drawable/bg_outline_btn"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_empty_history"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:layout_gravity="center"
+        android:text="暂无运动记录"
+        android:textColor="@color/text_muted"
+        android:textSize="14sp"
+        android:visibility="gone" />
+</LinearLayout>
+
+    <!-- 运动记录专用虚影 竖排居中 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="R\nE\nC\nO\nR\nD\nS"
+        android:textColor="@color/accent"
+        android:textSize="56sp"
+        android:textStyle="bold"
+        android:alpha="0.05"
+        android:gravity="center"
+        android:lineSpacingExtra="-8dp" />
+
+    <TextView
+        android:layout_width="300dp"
+        android:layout_height="2dp"
+        android:layout_gravity="center|bottom"
+        android:layout_marginBottom="120dp"
+        android:background="@drawable/bg_chip"
+        android:alpha="0.15" />
+
+    <!-- 删除栏（管理模式下显示）-->
+    <LinearLayout
+        android:id="@+id/layout_delete"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="14dp"
+        android:background="@color/surface"
+        android:layout_gravity="bottom"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/btn_cancel_manage"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:paddingHorizontal="12dp"
+            android:text="取消"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            android:background="@drawable/bg_card"
+            android:layout_marginEnd="8dp"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:id="@+id/tv_selected_count"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="已选 0 项"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/btn_select_all"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:paddingHorizontal="12dp"
+            android:text="全选"
+            android:textColor="@color/accent"
+            android:textSize="13sp"
+            android:background="@drawable/bg_outline_btn"
+            android:layout_marginEnd="10dp"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:id="@+id/btn_delete"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:paddingHorizontal="14dp"
+            android:text="删除"
+            android:textColor="@color/black"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:background="@drawable/bg_accent_btn"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+
+</FrameLayout>
