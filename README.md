@@ -1,5 +1,7 @@
 # FitCore - AI-Driven Android Fitness Tracker
 
+[中文版](README_CN.md)
+
 > **100% AI-generated** | 22 Java source files | 5 modules | Fully local SQLite storage
 
 FitCore is a lightweight, privacy-first fitness tracking Android app built entirely from scratch with AI coding agents (Claude Code + Cursor + Codex). No cloud, no ads, no tracking — your data stays on your device.
