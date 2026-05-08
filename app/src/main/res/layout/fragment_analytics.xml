@@ -100,13 +100,17 @@
             android:orientation="horizontal">
 
             <LinearLayout
+                android:id="@+id/card_total_workouts"
                 android:layout_width="0dp"
                 android:layout_height="100dp"
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_card"
                 android:gravity="center"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
                 <TextView
                     android:id="@+id/tv_total_workouts"
                     android:layout_width="wrap_content"
@@ -124,13 +128,17 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/card_total_hours"
                 android:layout_width="0dp"
                 android:layout_height="100dp"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_card"
                 android:gravity="center"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
                 <TextView
                     android:id="@+id/tv_total_hours"
                     android:layout_width="wrap_content"
@@ -183,13 +191,17 @@
             android:orientation="horizontal">
 
             <LinearLayout
+                android:id="@+id/card_week_workouts"
                 android:layout_width="0dp"
                 android:layout_height="72dp"
                 android:layout_marginEnd="6dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_card"
                 android:gravity="center"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
                 <TextView
                     android:id="@+id/tv_week_workouts"
                     android:layout_width="wrap_content"
@@ -208,13 +220,17 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/card_week_minutes"
                 android:layout_width="0dp"
                 android:layout_height="72dp"
                 android:layout_marginStart="6dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_card"
                 android:gravity="center"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
                 <TextView
                     android:id="@+id/tv_week_minutes"
                     android:layout_width="wrap_content"
@@ -232,6 +248,23 @@
                     android:textSize="11sp" />
             </LinearLayout>
         </LinearLayout>
+
+        <!-- 当日运动分布饼图 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="当日分布"
+            android:textColor="@color/accent"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <com.github.mikephil.charting.charts.PieChart
+            android:id="@+id/daily_pie_chart"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="4dp" />
 
         <TextView
             android:layout_width="wrap_content"

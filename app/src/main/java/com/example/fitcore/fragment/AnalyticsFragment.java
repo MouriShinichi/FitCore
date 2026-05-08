@@ -18,14 +18,21 @@ import com.example.fitcore.R;
 import com.example.fitcore.database.DatabaseHelper;
 import com.example.fitcore.utils.SessionManager;
 import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.data.PieData;
+import com.github.mikephil.charting.data.PieDataSet;
+import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.formatter.PercentFormatter;
+import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import java.util.ArrayList;
@@ -39,6 +46,20 @@ public class AnalyticsFragment extends Fragment {
     private int weekOffset = 0;
     private TextView tvWeekRange, tvWeekLabel, tvWeekWorkouts, tvWeekMinutes, tvCheckinTitle;
     private LinearLayout chartDayLabels;
+    private PieChart dailyPieChart;
+    private java.util.Map<String, Integer> typeToCategory;
+    private java.util.Map<String, String> typeToEmoji;
+
+    // 运动分类: [类别名, 运动名列表...]
+    private static final String[][] EXERCISE_CATEGORY = {
+        {"有氧运动", "跑步","骑行","游泳","跳绳","慢跑","快走","跳舞","登山","椭圆机","划船","轮滑","有氧操","马拉松","徒步","攀岩","越野跑","动感单车","自由泳","冲刺跑","街舞"},
+        {"力量训练", "俯卧撑","深蹲","仰卧起坐","硬拉","引体向上","平板支撑","哑铃","弓步蹲","卧推","深蹲架","飞鸟","腿举","弯举","推举","划船机","挺举","侧平举","臀桥","卷腹","窄距俯卧撑"},
+        {"柔韧拉伸", "瑜伽","拉伸","普拉提","泡沫轴","太极","开肩","压腿","猫式","阴瑜伽","流瑜伽","劈叉","髋部拉伸","肩颈放松","婴儿式","八段锦","冥想","动态拉伸","筋膜放松","高温瑜伽","脊柱扭转"},
+        {"球类运动", "篮球","足球","乒乓球","网球","排球","羽毛球","台球","曲棍球","棒球","橄榄球","保龄球","高尔夫","冰球","板球","垒球","手球","沙滩排球","壁球","长曲棍球","桌式足球"},
+        {"其他运动", "自定义","拳击","滑板","高尔夫","滑雪","武术","射箭","击剑","飞镖","摔跤","跆拳道","滑雪板","骑马","皮划艇","冲浪","潜水","溜冰","跳伞","钓鱼","龙舟"},
+    };
+    private static final String[] CAT_EMOJI = {"🏃", "💪", "🧘", "⚽", "➕"};
+    private static final int[] CAT_COLORS = {0xFFCCFF00, 0xFFFF4444, 0xFF4488FF, 0xFFFFAA00, 0xFF888888};
     private String[] weekDates = new String[7];
 
     @Nullable
@@ -68,6 +89,8 @@ public class AnalyticsFragment extends Fragment {
         tvWeekMinutes = view.findViewById(R.id.tv_week_minutes);
         tvCheckinTitle = view.findViewById(R.id.tv_checkin_title);
         chartDayLabels = view.findViewById(R.id.chart_day_labels);
+        dailyPieChart = view.findViewById(R.id.daily_pie_chart);
+        buildCategoryMap();
         View layoutWeekRange = view.findViewById(R.id.layout_week_range);
 
         // 点击日期区间 → 弹日期选择器
@@ -83,22 +106,33 @@ public class AnalyticsFragment extends Fragment {
                 int nowWeek = now.get(java.util.Calendar.WEEK_OF_YEAR);
                 int yearDiff = selected.get(java.util.Calendar.YEAR) - now.get(java.util.Calendar.YEAR);
                 weekOffset = (yearDiff * 52) + (selectedWeek - nowWeek);
-                refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view);
+                refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); setupDailyPie(view);
             }, cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH),
                     cal.get(java.util.Calendar.DAY_OF_MONTH)).show();
         });
 
         view.findViewById(R.id.btn_prev_week).setOnClickListener(v -> {
-            weekOffset--; refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view);
+            weekOffset--; refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); setupDailyPie(view);
         });
         view.findViewById(R.id.btn_next_week).setOnClickListener(v -> {
-            if (weekOffset < 0) { weekOffset++; refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); }
+            if (weekOffset < 0) { weekOffset++; refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); setupDailyPie(view); }
         });
+
+        // 4 卡片点击 → 饼图弹窗
+        view.findViewById(R.id.card_total_workouts).setOnClickListener(v ->
+                showPieSheet("总锻炼次数分布", false, false));
+        view.findViewById(R.id.card_total_hours).setOnClickListener(v ->
+                showPieSheet("总时长分布", true, false));
+        view.findViewById(R.id.card_week_workouts).setOnClickListener(v ->
+                showPieSheet("周锻炼次数分布", false, true));
+        view.findViewById(R.id.card_week_minutes).setOnClickListener(v ->
+                showPieSheet("周时长分布", true, true));
 
         refreshWeek();
         setupCheckin(view);
         setupWeekStats(view);
         setupChart(view);
+        setupDailyPie(view);
     }
 
     private TextView btnToday;
@@ -146,6 +180,7 @@ public class AnalyticsFragment extends Fragment {
                 setupCheckin(getView());
                 setupWeekStats(getView());
                 setupChart(getView());
+                setupDailyPie(getView());
             });
             ((FrameLayout) getView()).addView(btnToday);
         }
@@ -381,6 +416,253 @@ public class AnalyticsFragment extends Fragment {
         sheet.show();
     }
 
+    private void buildCategoryMap() {
+        typeToCategory = new java.util.HashMap<>();
+        typeToEmoji = new java.util.HashMap<>();
+        for (int c = 0; c < EXERCISE_CATEGORY.length; c++) {
+            for (int i = 1; i < EXERCISE_CATEGORY[c].length; i++) {
+                typeToCategory.put(EXERCISE_CATEGORY[c][i], c);
+                typeToEmoji.put(EXERCISE_CATEGORY[c][i], CAT_EMOJI[c]);
+            }
+        }
+    }
+
+    private int getCategory(String type) {
+        if (type == null) return -1;
+        for (int c = 0; c < EXERCISE_CATEGORY.length; c++) {
+            for (int i = 1; i < EXERCISE_CATEGORY[c].length; i++) {
+                if (type.contains(EXERCISE_CATEGORY[c][i])) return c;
+            }
+        }
+        return 4; // 其他
+    }
+
+    private void showPieSheet(String title, boolean useMinutes, boolean filterWeek) {
+        int[] counts = new int[5];
+        int[] minutes = new int[5];
+
+        final java.util.Set<String> dateSet;
+        if (filterWeek) {
+            java.util.Set<String> ds = new java.util.HashSet<>();
+            for (String d : weekDates) ds.add(d);
+            dateSet = ds;
+        } else {
+            dateSet = null;
+        }
+
+        for (com.example.fitcore.model.WorkoutRecord r : db.getRecordsByUser(session.getUserId())) {
+            if (r.getRecordedAt() == null || r.getRecordedAt().length() < 10) continue;
+            if (dateSet != null && !dateSet.contains(r.getRecordedAt().substring(0, 10))) continue;
+            int cat = getCategory(r.getType());
+            if (cat < 0 || cat >= 5) continue;
+            counts[cat]++;
+            minutes[cat] += r.getDurationMinutes();
+        }
+
+        // 生成 PieChart
+        BottomSheetDialog sheet = new BottomSheetDialog(requireContext());
+        View content = LayoutInflater.from(requireContext())
+                .inflate(R.layout.bottom_sheet_pie_chart, null);
+        ((TextView) content.findViewById(R.id.bs_pie_title)).setText(title);
+        PieChart pie = content.findViewById(R.id.pie_chart);
+
+        List<PieEntry> entries = new ArrayList<>();
+        List<Integer> colors = new ArrayList<>();
+        for (int c = 0; c < 5; c++) {
+            float val = useMinutes ? minutes[c] : counts[c];
+            if (val > 0) {
+                entries.add(new PieEntry(val, EXERCISE_CATEGORY[c][0]));
+                colors.add(CAT_COLORS[c]);
+            }
+        }
+        if (entries.isEmpty()) {
+            entries.add(new PieEntry(1, "暂无数据"));
+            colors.add(0xFF555555);
+        }
+
+        PieDataSet dataSet = new PieDataSet(entries, "");
+        dataSet.setColors(colors);
+        dataSet.setSliceSpace(3f);
+        dataSet.setValueTextColor(0xFFFFFFFF);
+        dataSet.setValueTextSize(12f);
+        dataSet.setValueFormatter(new com.github.mikephil.charting.formatter.ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return useMinutes ? ((int)value + "min") : ((int)value + "次");
+            }
+        });
+
+        PieData data = new PieData(dataSet);
+        pie.setData(data);
+        pie.setUsePercentValues(false);
+        pie.getDescription().setEnabled(false);
+        pie.setDrawHoleEnabled(true);
+        pie.setHoleColor(0xFF111111);
+        pie.setHoleRadius(45f);
+        pie.setTransparentCircleRadius(50f);
+        pie.setRotationEnabled(false);
+        pie.setDrawEntryLabels(false);
+        pie.getLegend().setTextColor(0xFFAAAAAA);
+        pie.getLegend().setTextSize(12f);
+        pie.animateY(500);
+
+        // 点击饼块 → 显示该类记录
+        int[] finalCounts = counts;
+        int[] finalMinutes = minutes;
+        pie.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+            @Override
+            public void onValueSelected(com.github.mikephil.charting.data.Entry e, Highlight h) {
+                if (h.getX() < 0 || h.getX() >= 5) return;
+                int catIdx = (int) h.getX();
+                if (finalCounts[catIdx] == 0) return;
+                String catName = EXERCISE_CATEGORY[catIdx][0];
+                String subTitle = useMinutes
+                        ? (finalMinutes[catIdx] >= 60 ? (finalMinutes[catIdx]/60 + "h" + finalMinutes[catIdx]%60 + "min") : finalMinutes[catIdx]+"min")
+                        : finalCounts[catIdx] + "次";
+                showCategoryRecordsSheet(catName + " · " + subTitle, catIdx, dateSet);
+            }
+            @Override public void onNothingSelected() {}
+        });
+
+        pie.invalidate();
+        sheet.setContentView(content);
+        sheet.show();
+    }
+
+    private void showCategoryRecordsSheet(String title, int catIdx, java.util.Set<String> dateSet) {
+        BottomSheetDialog sheet = new BottomSheetDialog(requireContext());
+        View content = LayoutInflater.from(requireContext())
+                .inflate(R.layout.bottom_sheet_day_records, null);
+        ((TextView) content.findViewById(R.id.bs_day_title)).setText(title);
+
+        LinearLayout container = content.findViewById(R.id.bs_records_container);
+        String[] feelEmoji = {"", "😫", "😕", "😐", "😊", "🔥"};
+        String[] feelLabel = {"", "差", "较差", "一般", "良好", "爽"};
+
+        for (com.example.fitcore.model.WorkoutRecord r : db.getRecordsByUser(session.getUserId())) {
+            if (r.getRecordedAt() == null || r.getRecordedAt().length() < 10) continue;
+            if (dateSet != null && !dateSet.contains(r.getRecordedAt().substring(0, 10))) continue;
+            if (getCategory(r.getType()) != catIdx) continue;
+
+            LinearLayout item = new LinearLayout(requireContext());
+            item.setOrientation(LinearLayout.VERTICAL);
+            item.setPadding(dp(14), dp(10), dp(14), dp(10));
+            item.setBackgroundResource(R.drawable.bg_card);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            lp.topMargin = dp(6);
+            item.setLayoutParams(lp);
+
+            TextView tvType = new TextView(requireContext());
+            tvType.setText(r.getType());
+            tvType.setTextColor(Color.parseColor("#FFFFFF"));
+            tvType.setTextSize(15);
+            tvType.setTypeface(null, android.graphics.Typeface.BOLD);
+
+            int f = r.getFeeling();
+            String emoji = (f >= 1 && f <= 5) ? feelEmoji[f] : "";
+            String label = (f >= 1 && f <= 5) ? feelLabel[f] : "";
+            TextView tvInfo = new TextView(requireContext());
+            tvInfo.setText(r.getDurationMinutes() + "分钟 · 体感 " + emoji + " " + label);
+            tvInfo.setTextColor(Color.parseColor("#AAAAAA"));
+            tvInfo.setTextSize(12);
+            tvInfo.setPadding(0, dp(4), 0, 0);
+
+            item.addView(tvType);
+            item.addView(tvInfo);
+            container.addView(item);
+        }
+
+        sheet.setContentView(content);
+        sheet.show();
+    }
+
+    private void setupDailyPie(View view) {
+        String today = weekDates[6];
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+        // 只有当天且是本周时才显示
+        if (weekOffset != 0) {
+            dailyPieChart.setVisibility(View.GONE);
+            return;
+        }
+        String realToday = sdf.format(cal.getTime());
+        if (!today.equals(realToday)) {
+            dailyPieChart.setVisibility(View.GONE);
+            return;
+        }
+
+        int[] counts = new int[5];
+        for (com.example.fitcore.model.WorkoutRecord r : db.getRecordsByUser(session.getUserId())) {
+            if (r.getRecordedAt() != null && r.getRecordedAt().length() >= 10
+                    && r.getRecordedAt().substring(0, 10).equals(realToday)) {
+                int cat = getCategory(r.getType());
+                if (cat >= 0 && cat < 5) counts[cat]++;
+            }
+        }
+
+        boolean hasData = false;
+        for (int c : counts) if (c > 0) { hasData = true; break; }
+        if (!hasData) {
+            dailyPieChart.setVisibility(View.GONE);
+            return;
+        }
+
+        dailyPieChart.setVisibility(View.VISIBLE);
+        List<PieEntry> entries = new ArrayList<>();
+        List<Integer> colors = new ArrayList<>();
+        for (int c = 0; c < 5; c++) {
+            if (counts[c] > 0) {
+                entries.add(new PieEntry(counts[c], EXERCISE_CATEGORY[c][0]));
+                colors.add(CAT_COLORS[c]);
+            }
+        }
+
+        PieDataSet dataSet = new PieDataSet(entries, "");
+        dataSet.setColors(colors);
+        dataSet.setSliceSpace(2f);
+        dataSet.setValueTextColor(0xFFFFFFFF);
+        dataSet.setValueTextSize(11f);
+        dataSet.setValueFormatter(new com.github.mikephil.charting.formatter.ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return (int) value + "次";
+            }
+        });
+
+        PieData data = new PieData(dataSet);
+        dailyPieChart.setData(data);
+        dailyPieChart.setUsePercentValues(false);
+        dailyPieChart.getDescription().setEnabled(false);
+        dailyPieChart.setDrawHoleEnabled(true);
+        dailyPieChart.setHoleColor(0xFF111111);
+        dailyPieChart.setHoleRadius(35f);
+        dailyPieChart.setTransparentCircleRadius(38f);
+        dailyPieChart.setRotationEnabled(false);
+        dailyPieChart.setDrawEntryLabels(false);
+        dailyPieChart.getLegend().setTextColor(0xFFAAAAAA);
+        dailyPieChart.getLegend().setTextSize(11f);
+
+        // 点击饼块 → 显示当天该类记录
+        java.util.Set<String> todaySet = new java.util.HashSet<>();
+        todaySet.add(realToday);
+        dailyPieChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+            @Override
+            public void onValueSelected(com.github.mikephil.charting.data.Entry e, Highlight h) {
+                if (h.getX() < 0 || h.getX() >= 5) return;
+                int catIdx = (int) h.getX();
+                if (counts[catIdx] == 0) return;
+                String catName = EXERCISE_CATEGORY[catIdx][0];
+                showCategoryRecordsSheet(catName + " · " + counts[catIdx] + "次", catIdx, todaySet);
+            }
+            @Override public void onNothingSelected() {}
+        });
+
+        dailyPieChart.animateY(400);
+        dailyPieChart.invalidate();
+    }
+
     @Override
     public void onResume() {
         super.onResume();
@@ -394,6 +676,7 @@ public class AnalyticsFragment extends Fragment {
             setupCheckin(getView());
             setupWeekStats(getView());
             setupChart(getView());
+            setupDailyPie(getView());
         }
     }
 }
