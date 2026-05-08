@@ -45,8 +45,11 @@ public class AnalyticsFragment extends Fragment {
     private SessionManager session;
     private int weekOffset = 0;
     private TextView tvWeekRange, tvWeekLabel, tvWeekWorkouts, tvWeekMinutes, tvCheckinTitle;
-    private LinearLayout chartDayLabels;
-    private PieChart dailyPieChart;
+    private LinearLayout chartDayLabels, dayPieLegend;
+    private PieChart dayPieCount, dayPieMinute;
+    private TextView tvDayPieTitle;
+    private TextView[] dayLabels = new TextView[7];
+    private int selectedDayIndex = -1;
     private java.util.Map<String, Integer> typeToCategory;
     private java.util.Map<String, String> typeToEmoji;
 
@@ -89,7 +92,14 @@ public class AnalyticsFragment extends Fragment {
         tvWeekMinutes = view.findViewById(R.id.tv_week_minutes);
         tvCheckinTitle = view.findViewById(R.id.tv_checkin_title);
         chartDayLabels = view.findViewById(R.id.chart_day_labels);
-        dailyPieChart = view.findViewById(R.id.daily_pie_chart);
+        dayPieCount = view.findViewById(R.id.day_pie_count);
+        dayPieMinute = view.findViewById(R.id.day_pie_minutes);
+        tvDayPieTitle = view.findViewById(R.id.tv_day_pie_title);
+        dayPieLegend = view.findViewById(R.id.day_pie_legend);
+        for (int i = 0; i < 7; i++) {
+            int id = getResources().getIdentifier("day_label_" + (i + 1), "id", requireContext().getPackageName());
+            dayLabels[i] = view.findViewById(id);
+        }
         buildCategoryMap();
         View layoutWeekRange = view.findViewById(R.id.layout_week_range);
 
@@ -106,16 +116,16 @@ public class AnalyticsFragment extends Fragment {
                 int nowWeek = now.get(java.util.Calendar.WEEK_OF_YEAR);
                 int yearDiff = selected.get(java.util.Calendar.YEAR) - now.get(java.util.Calendar.YEAR);
                 weekOffset = (yearDiff * 52) + (selectedWeek - nowWeek);
-                refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); setupDailyPie(view);
+                refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); setupDayPies(view);
             }, cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH),
                     cal.get(java.util.Calendar.DAY_OF_MONTH)).show();
         });
 
         view.findViewById(R.id.btn_prev_week).setOnClickListener(v -> {
-            weekOffset--; refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); setupDailyPie(view);
+            weekOffset--; refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); setupDayPies(view);
         });
         view.findViewById(R.id.btn_next_week).setOnClickListener(v -> {
-            if (weekOffset < 0) { weekOffset++; refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); setupDailyPie(view); }
+            if (weekOffset < 0) { weekOffset++; refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); setupDayPies(view); }
         });
 
         // 4 卡片点击 → 饼图弹窗
@@ -132,7 +142,7 @@ public class AnalyticsFragment extends Fragment {
         setupCheckin(view);
         setupWeekStats(view);
         setupChart(view);
-        setupDailyPie(view);
+        setupDayPies(view);
     }
 
     private TextView btnToday;
@@ -180,7 +190,7 @@ public class AnalyticsFragment extends Fragment {
                 setupCheckin(getView());
                 setupWeekStats(getView());
                 setupChart(getView());
-                setupDailyPie(getView());
+                setupDayPies(getView());
             });
             ((FrameLayout) getView()).addView(btnToday);
         }
@@ -291,10 +301,14 @@ public class AnalyticsFragment extends Fragment {
 
         chart.getAxisRight().setEnabled(false);
 
-        // 今天索引
         java.util.Calendar cal = java.util.Calendar.getInstance();
         int todayIdx = (cal.get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7;
         boolean isCurrentWeek = (weekOffset == 0);
+
+        // 设置选中日期（非本周重置）
+        if (!isCurrentWeek) selectedDayIndex = -1;
+        if (selectedDayIndex < 0) selectedDayIndex = isCurrentWeek ? todayIdx : 0;
+        final int selIdx = selectedDayIndex;
 
         List<int[]> weekly = db.getWeeklyMinutesForDates(session.getUserId(), weekDates);
         List<BarEntry> entries = new ArrayList<>();
@@ -306,7 +320,7 @@ public class AnalyticsFragment extends Fragment {
         while (entries.size() < 7) entries.add(new BarEntry(entries.size(), 0));
 
         for (int i = 0; i < 7; i++) {
-            if (isCurrentWeek && i == todayIdx) {
+            if (isCurrentWeek && i == selIdx) {
                 barColors.add(Color.parseColor("#7CB342"));
             } else {
                 barColors.add(Color.parseColor("#337CB342"));
@@ -326,14 +340,27 @@ public class AnalyticsFragment extends Fragment {
         xAxis.setGranularity(1f);
         chart.animateY(500);
 
-        // 自定义星期标签
+        // 自定义星期标签 + 点击切换日期
         String[] labelTexts = {"一","二","三","四","五","六","日"};
-        for (int i = 0; i < chartDayLabels.getChildCount() && i < 7; i++) {
-            TextView tv = (TextView) chartDayLabels.getChildAt(i);
-            tv.setText(labelTexts[i]);
-            tv.setTextColor(isCurrentWeek && i == todayIdx
+        for (int i = 0; i < 7; i++) {
+            dayLabels[i].setText(labelTexts[i]);
+            dayLabels[i].setTextColor(isCurrentWeek && i == selIdx
                     ? Color.parseColor("#7CB342") : Color.parseColor("#888888"));
+            final int di = i;
+            dayLabels[i].setOnClickListener(v -> {
+                if (!isCurrentWeek) return;
+                selectedDayIndex = di;
+                for (int j = 0; j < 7; j++) {
+                    dayLabels[j].setTextColor(j == di
+                            ? Color.parseColor("#7CB342") : Color.parseColor("#888888"));
+                }
+                chart.highlightValue(di, 0);
+                setupDayPies(getView());
+            });
         }
+
+        // 高亮选中日期的柱子
+        chart.highlightValue(selIdx, 0);
 
         // 点击柱子 → 弹出当天记录
         chart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
@@ -503,7 +530,10 @@ public class AnalyticsFragment extends Fragment {
         pie.setRotationEnabled(false);
         pie.setDrawEntryLabels(false);
         pie.getLegend().setTextColor(0xFFAAAAAA);
-        pie.getLegend().setTextSize(12f);
+        pie.getLegend().setTextSize(13f);
+        pie.getLegend().setFormSize(10f);
+        pie.getLegend().setXEntrySpace(8f);
+        pie.getLegend().setYEntrySpace(4f);
         pie.animateY(500);
 
         // 点击饼块 → 显示该类记录
@@ -578,42 +608,71 @@ public class AnalyticsFragment extends Fragment {
         sheet.show();
     }
 
-    private void setupDailyPie(View view) {
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
-        String realToday = sdf.format(java.util.Calendar.getInstance().getTime());
-
-        // 只有当天在本周范围内才显示
-        boolean todayInView = false;
-        for (String d : weekDates) {
-            if (d.equals(realToday)) { todayInView = true; break; }
-        }
-        if (!todayInView) {
-            dailyPieChart.setVisibility(View.GONE);
+    private void setupDayPies(View view) {
+        int di = selectedDayIndex;
+        if (di < 0 || di >= 7) {
+            dayPieCount.setVisibility(View.GONE);
+            dayPieMinute.setVisibility(View.GONE);
+            tvDayPieTitle.setVisibility(View.GONE);
+            dayPieLegend.setVisibility(View.GONE);
             return;
         }
 
+        String date = weekDates[di];
         int[] counts = new int[5];
+        int[] minutes = new int[5];
+        String[] catNames = new String[5];
+        for (int c = 0; c < 5; c++) catNames[c] = EXERCISE_CATEGORY[c][0];
+
         for (com.example.fitcore.model.WorkoutRecord r : db.getRecordsByUser(session.getUserId())) {
             if (r.getRecordedAt() != null && r.getRecordedAt().length() >= 10
-                    && r.getRecordedAt().substring(0, 10).equals(realToday)) {
+                    && r.getRecordedAt().substring(0, 10).equals(date)) {
                 int cat = getCategory(r.getType());
-                if (cat >= 0 && cat < 5) counts[cat]++;
+                if (cat >= 0 && cat < 5) {
+                    counts[cat]++;
+                    minutes[cat] += r.getDurationMinutes();
+                }
             }
         }
 
         boolean hasData = false;
         for (int c : counts) if (c > 0) { hasData = true; break; }
+
         if (!hasData) {
-            dailyPieChart.setVisibility(View.GONE);
+            dayPieCount.setVisibility(View.GONE);
+            dayPieMinute.setVisibility(View.GONE);
+            tvDayPieTitle.setVisibility(View.GONE);
+            dayPieLegend.setVisibility(View.GONE);
             return;
         }
 
-        dailyPieChart.setVisibility(View.VISIBLE);
+        dayPieCount.setVisibility(View.VISIBLE);
+        dayPieMinute.setVisibility(View.VISIBLE);
+        tvDayPieTitle.setVisibility(View.VISIBLE);
+        dayPieLegend.setVisibility(View.VISIBLE);
+
+        String[] labelTexts = {"一","二","三","四","五","六","日"};
+        tvDayPieTitle.setText(date.substring(5) + " 周" + labelTexts[di] + " 分布");
+
+        final java.util.Set<String> dateSet = new java.util.HashSet<>();
+        dateSet.add(date);
+
+        // 左: 次数饼图
+        setupSinglePie(dayPieCount, counts, catNames, "次", dateSet);
+        // 右: 时长饼图
+        setupSinglePie(dayPieMinute, minutes, catNames, "min", dateSet);
+
+        // 图例行
+        buildPieLegend(dayPieLegend, catNames);
+    }
+
+    private void setupSinglePie(PieChart pie, int[] values, String[] catNames, String unit,
+                                 java.util.Set<String> dateSet) {
         List<PieEntry> entries = new ArrayList<>();
         List<Integer> colors = new ArrayList<>();
         for (int c = 0; c < 5; c++) {
-            if (counts[c] > 0) {
-                entries.add(new PieEntry(counts[c], EXERCISE_CATEGORY[c][0]));
+            if (values[c] > 0) {
+                entries.add(new PieEntry(values[c], catNames[c]));
                 colors.add(CAT_COLORS[c]);
             }
         }
@@ -622,44 +681,70 @@ public class AnalyticsFragment extends Fragment {
         dataSet.setColors(colors);
         dataSet.setSliceSpace(2f);
         dataSet.setValueTextColor(0xFFFFFFFF);
-        dataSet.setValueTextSize(11f);
+        dataSet.setValueTextSize(10f);
         dataSet.setValueFormatter(new com.github.mikephil.charting.formatter.ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
-                return (int) value + "次";
+                int v = (int) value;
+                if ("min".equals(unit) && v >= 60) return (v / 60) + "h" + (v % 60) + "min";
+                return v + unit;
             }
         });
 
         PieData data = new PieData(dataSet);
-        dailyPieChart.setData(data);
-        dailyPieChart.setUsePercentValues(false);
-        dailyPieChart.getDescription().setEnabled(false);
-        dailyPieChart.setDrawHoleEnabled(true);
-        dailyPieChart.setHoleColor(0xFF111111);
-        dailyPieChart.setHoleRadius(35f);
-        dailyPieChart.setTransparentCircleRadius(38f);
-        dailyPieChart.setRotationEnabled(false);
-        dailyPieChart.setDrawEntryLabels(false);
-        dailyPieChart.getLegend().setTextColor(0xFFAAAAAA);
-        dailyPieChart.getLegend().setTextSize(11f);
+        pie.setData(data);
+        pie.setUsePercentValues(false);
+        pie.getDescription().setEnabled(false);
+        pie.setDrawHoleEnabled(true);
+        pie.setHoleColor(0xFF111111);
+        pie.setHoleRadius(30f);
+        pie.setTransparentCircleRadius(33f);
+        pie.setRotationEnabled(false);
+        pie.setDrawEntryLabels(false);
+        pie.getLegend().setEnabled(false);
 
-        // 点击饼块 → 显示当天该类记录
-        java.util.Set<String> todaySet = new java.util.HashSet<>();
-        todaySet.add(realToday);
-        dailyPieChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+        pie.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
             public void onValueSelected(com.github.mikephil.charting.data.Entry e, Highlight h) {
                 if (h.getX() < 0 || h.getX() >= 5) return;
                 int catIdx = (int) h.getX();
-                if (counts[catIdx] == 0) return;
-                String catName = EXERCISE_CATEGORY[catIdx][0];
-                showCategoryRecordsSheet(catName + " · " + counts[catIdx] + "次", catIdx, todaySet);
+                if (values[catIdx] == 0) return;
+                showCategoryRecordsSheet(catNames[catIdx] + " · " + (int) e.getY() + unit, catIdx, dateSet);
             }
             @Override public void onNothingSelected() {}
         });
 
-        dailyPieChart.animateY(400);
-        dailyPieChart.invalidate();
+        pie.animateY(300);
+        pie.invalidate();
+    }
+
+    private void buildPieLegend(LinearLayout container, String[] catNames) {
+        container.removeAllViews();
+        for (int c = 0; c < 5; c++) {
+            LinearLayout item = new LinearLayout(requireContext());
+            item.setOrientation(LinearLayout.HORIZONTAL);
+            item.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            lp.setMargins(dp(6), 0, dp(6), 0);
+            item.setLayoutParams(lp);
+
+            View dot = new View(requireContext());
+            dot.setBackgroundColor(CAT_COLORS[c]);
+            LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(dp(8), dp(8));
+            dlp.gravity = Gravity.CENTER;
+            dot.setLayoutParams(dlp);
+
+            TextView label = new TextView(requireContext());
+            label.setText(catNames[c]);
+            label.setTextColor(Color.parseColor("#AAAAAA"));
+            label.setTextSize(10);
+            label.setPadding(dp(3), 0, 0, 0);
+
+            item.addView(dot);
+            item.addView(label);
+            container.addView(item);
+        }
     }
 
     @Override
@@ -675,7 +760,7 @@ public class AnalyticsFragment extends Fragment {
             setupCheckin(getView());
             setupWeekStats(getView());
             setupChart(getView());
-            setupDailyPie(getView());
+            setupDayPies(getView());
         }
     }
 }
