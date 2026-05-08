@@ -317,6 +317,7 @@ public class AnalyticsFragment extends Fragment {
         String date = weekDates[dayIndex];
         String[] labelTexts = {"一","二","三","四","五","六","日"};
         String[] feelEmoji = {"", "😫", "😕", "😐", "😊", "🔥"};
+        String[] feelLabel = {"", "差", "较差", "一般", "良好", "爽"};
 
         BottomSheetDialog sheet = new BottomSheetDialog(requireContext());
         View content = LayoutInflater.from(requireContext())
@@ -363,7 +364,8 @@ public class AnalyticsFragment extends Fragment {
                 TextView tvInfo = new TextView(requireContext());
                 int f = r.getFeeling();
                 String emoji = (f >= 1 && f <= 5) ? feelEmoji[f] : "";
-                tvInfo.setText(r.getDurationMinutes() + "分钟 · 体感 " + emoji + " " + f + "/5");
+                String label = (f >= 1 && f <= 5) ? feelLabel[f] : "";
+                tvInfo.setText(r.getDurationMinutes() + "分钟 · 体感 " + emoji + " " + label);
                 tvInfo.setTextColor(Color.parseColor("#AAAAAA"));
                 tvInfo.setTextSize(12);
                 tvInfo.setPadding(0, dp(4), 0, 0);
