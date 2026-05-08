@@ -43,7 +43,8 @@ public class ProfileFragment extends Fragment {
     private SessionManager session;
     private ImageView ivAvatar;
     private ImageView ivProfileBackground;
-    private ImageView ivBgEdit;
+    private View viewHeaderGradient;
+    private TextView tvFitcoreWatermark;
     private ActivityResultLauncher<String> pickImageLauncher;
     private ActivityResultLauncher<String> pickBgImageLauncher;
 
@@ -89,7 +90,8 @@ public class ProfileFragment extends Fragment {
 
         // ----- 背景图片 -----
         ivProfileBackground = view.findViewById(R.id.iv_profile_background);
-        ivBgEdit = view.findViewById(R.id.iv_bg_edit);
+        viewHeaderGradient = view.findViewById(R.id.view_header_gradient);
+        tvFitcoreWatermark = view.findViewById(R.id.tv_fitcore_watermark);
 
         pickBgImageLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
@@ -102,7 +104,6 @@ public class ProfileFragment extends Fragment {
 
         View headerArea = view.findViewById(R.id.layout_profile_header);
         headerArea.setOnClickListener(v -> onBackgroundClick());
-        ivBgEdit.setOnClickListener(v -> onBackgroundClick());
         loadBackground();
 
         ivAvatar.setOnClickListener(v -> onAvatarClick());
@@ -381,16 +382,20 @@ public class ProfileFragment extends Fragment {
             int targetH = ivProfileBackground.getHeight();
             if (targetW <= 0) {
                 targetW = getResources().getDisplayMetrics().widthPixels;
-                targetH = dp(200);
+                targetH = dp(280);
             }
             Bitmap blurred = decodeAndBlurBackground(getBackgroundFile(), targetW, targetH);
             if (blurred != null) {
                 ivProfileBackground.setImageBitmap(blurred);
                 ivProfileBackground.setVisibility(View.VISIBLE);
+                viewHeaderGradient.setVisibility(View.GONE);
+                tvFitcoreWatermark.setVisibility(View.GONE);
             }
         } else {
             ivProfileBackground.setImageDrawable(null);
             ivProfileBackground.setVisibility(View.GONE);
+            viewHeaderGradient.setVisibility(View.VISIBLE);
+            tvFitcoreWatermark.setVisibility(View.VISIBLE);
         }
     }
 
@@ -456,7 +461,7 @@ public class ProfileFragment extends Fragment {
         if (source == null) return null;
 
         float aspect = (float) source.getWidth() / source.getHeight();
-        int smallW = 150;
+        int smallW = 250;
         int smallH = Math.round(smallW / aspect);
         if (smallH <= 0) smallH = 1;
         Bitmap small = Bitmap.createScaledBitmap(source, smallW, smallH, true);
