@@ -456,7 +456,7 @@ public class ProfileFragment extends Fragment {
         if (source == null) return null;
 
         float aspect = (float) source.getWidth() / source.getHeight();
-        int smallW = 50;
+        int smallW = 150;
         int smallH = Math.round(smallW / aspect);
         if (smallH <= 0) smallH = 1;
         Bitmap small = Bitmap.createScaledBitmap(source, smallW, smallH, true);
