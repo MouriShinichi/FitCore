@@ -233,7 +233,6 @@ public class RecordFragment extends Fragment {
     }
 
     private void loadTodayStats() {
-        // 查询今日运动总时长
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
         String today = sdf.format(new java.util.Date());
         int mins = 0;
@@ -243,7 +242,9 @@ public class RecordFragment extends Fragment {
             }
         }
         todayMinutes = mins;
-        tvTodayMinutes.setText(mins + " 分钟");
+        todayGoal = requireContext().getSharedPreferences("fitcore_prefs", 0)
+                .getInt("daily_goal_minutes", 60);
+        tvTodayMinutes.setText(mins + " / " + todayGoal + " 分钟");
         int cal = 0;
         for (WorkoutRecord r : db.getRecordsByUser(session.getUserId())) {
             if (r.getRecordedAt() != null && r.getRecordedAt().startsWith(today))
