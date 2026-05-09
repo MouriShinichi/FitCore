@@ -252,33 +252,47 @@ public class AnalyticsFragment extends Fragment {
             boolean worked = workoutDays.contains(weekDates[i]);
             boolean isToday = isCurrentWeek && (i == today);
 
-            int size = dp(40);
+            int circleSize = dp(36);
             FrameLayout dayItem = new FrameLayout(requireContext());
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    0, size, 1);
+                    0, dp(48), 1);
             dayItem.setLayoutParams(lp);
 
-            // 圆形背景
+            // 圆形背景（无边框）
             View dot = new View(requireContext());
             android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
             gd.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-            if (worked) gd.setColor(0xFFCCFF00);
+            if (worked) gd.setColor(0xFF7CB342);
             else gd.setColor(0xFF222222);
-            if (isToday) gd.setStroke(dp(2), worked ? 0xFF000000 : 0xFFCCFF00);
             dot.setBackground(gd);
-            FrameLayout.LayoutParams dotLp = new FrameLayout.LayoutParams(size, size);
-            dotLp.gravity = Gravity.CENTER;
+            FrameLayout.LayoutParams dotLp = new FrameLayout.LayoutParams(circleSize, circleSize);
+            dotLp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.TOP;
+            dotLp.topMargin = dp(2);
             dayItem.addView(dot, dotLp);
 
-            // 文字标签居中叠加
+            // 文字标签居中叠加在圆上
             TextView label = new TextView(requireContext());
             label.setText(labels[i]);
             label.setTextSize(14);
-            label.setTextColor(worked ? 0xFF000000 : (isToday ? 0xFFCCFF00 : 0xFF888888));
+            label.setTextColor(worked ? 0xFF000000 : 0xFF888888);
             FrameLayout.LayoutParams lblLp = new FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
-            lblLp.gravity = Gravity.CENTER;
+            lblLp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.TOP;
+            lblLp.topMargin = dp(9);
             dayItem.addView(label, lblLp);
+
+            // 今天指示器：圆下方小绿点
+            if (isToday) {
+                View todayDot = new View(requireContext());
+                android.graphics.drawable.GradientDrawable tgd = new android.graphics.drawable.GradientDrawable();
+                tgd.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+                tgd.setColor(0xFF7CB342);
+                todayDot.setBackground(tgd);
+                FrameLayout.LayoutParams tlp = new FrameLayout.LayoutParams(dp(6), dp(6));
+                tlp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
+                tlp.bottomMargin = dp(2);
+                dayItem.addView(todayDot, tlp);
+            }
 
             container.addView(dayItem);
         }
