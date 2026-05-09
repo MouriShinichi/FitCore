@@ -529,12 +529,12 @@ public class AnalyticsFragment extends Fragment {
         pie.setTransparentCircleRadius(50f);
         pie.setRotationEnabled(false);
         pie.setDrawEntryLabels(false);
-        pie.getLegend().setTextColor(0xFFAAAAAA);
-        pie.getLegend().setTextSize(13f);
-        pie.getLegend().setFormSize(10f);
-        pie.getLegend().setXEntrySpace(8f);
-        pie.getLegend().setYEntrySpace(4f);
+        pie.getLegend().setEnabled(false);
         pie.animateY(500);
+
+        // 自定义图例行
+        LinearLayout legendRow = content.findViewById(R.id.bs_pie_legend);
+        buildPieLegend(legendRow, new String[]{"有氧运动", "力量训练", "柔韧拉伸", "球类运动", "其他运动"});
 
         // 点击饼块 → 显示该类记录
         int[] finalCounts = counts;

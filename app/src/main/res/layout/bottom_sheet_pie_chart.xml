@@ -28,9 +28,18 @@
 
     <com.github.mikephil.charting.charts.PieChart
         android:id="@+id/pie_chart"
-        android:layout_width="280dp"
-        android:layout_height="280dp"
+        android:layout_width="260dp"
+        android:layout_height="260dp"
         android:layout_gravity="center"
         android:layout_marginTop="12dp" />
+
+    <!-- 自定义图例行 -->
+    <LinearLayout
+        android:id="@+id/bs_pie_legend"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:orientation="horizontal" />
 
 </LinearLayout>
