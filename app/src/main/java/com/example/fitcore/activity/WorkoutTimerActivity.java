@@ -1,6 +1,7 @@
 package com.example.fitcore.activity;
 
 import android.app.AlertDialog;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -18,10 +19,12 @@ import com.example.fitcore.R;
 import com.example.fitcore.database.DatabaseHelper;
 import com.example.fitcore.model.WorkoutRecord;
 import com.example.fitcore.utils.SessionManager;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 public class WorkoutTimerActivity extends AppCompatActivity {
 
-    private TextView tvTimer, tvTimerStatus, ivPlayIcon;
+    private TextView tvTimer, tvTimerStatus;
+    private FloatingActionButton fabPlay;
     private View fabDone, fabCancel;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -51,7 +54,7 @@ public class WorkoutTimerActivity extends AppCompatActivity {
 
         tvTimer = findViewById(R.id.tv_timer);
         tvTimerStatus = findViewById(R.id.tv_timer_status);
-        ivPlayIcon = findViewById(R.id.iv_play_icon);
+        fabPlay = (FloatingActionButton) findViewById(R.id.fab_play);
         fabDone = findViewById(R.id.fab_done);
         fabCancel = findViewById(R.id.fab_cancel);
 
@@ -64,8 +67,7 @@ public class WorkoutTimerActivity extends AppCompatActivity {
             }
         };
 
-        View innerCircle = findViewById(R.id.view_inner_circle);
-        innerCircle.setOnClickListener(v -> {
+        fabPlay.setOnClickListener(v -> {
             if (!isRunning) startTimer();
             else if (isPaused) resumeTimer();
             else pauseTimer();
@@ -95,7 +97,8 @@ public class WorkoutTimerActivity extends AppCompatActivity {
         handler.post(ticker);
         isRunning = true; isPaused = false;
         tvTimerStatus.setText("运动中");
-        ivPlayIcon.setText("⏸");
+        fabPlay.setImageResource(android.R.drawable.ic_media_pause);
+        fabPlay.setBackgroundTintList(ColorStateList.valueOf(0xFFFFAA00));
         fabDone.setVisibility(View.VISIBLE);
     }
 
@@ -105,7 +108,8 @@ public class WorkoutTimerActivity extends AppCompatActivity {
         handler.post(ticker);
         isPaused = false;
         tvTimerStatus.setText("运动中");
-        ivPlayIcon.setText("⏸");
+        fabPlay.setImageResource(android.R.drawable.ic_media_pause);
+        fabPlay.setBackgroundTintList(ColorStateList.valueOf(0xFFFFAA00));
     }
 
     private void pauseTimer() {
@@ -113,7 +117,8 @@ public class WorkoutTimerActivity extends AppCompatActivity {
         handler.removeCallbacks(ticker);
         isPaused = true;
         tvTimerStatus.setText("已暂停");
-        ivPlayIcon.setText("▶");
+        fabPlay.setImageResource(android.R.drawable.ic_media_play);
+        fabPlay.setBackgroundTintList(ColorStateList.valueOf(0xFFCCFF00));
     }
 
     private void updateTimerDisplay() {
