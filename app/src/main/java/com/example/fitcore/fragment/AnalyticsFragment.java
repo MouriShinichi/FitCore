@@ -117,16 +117,24 @@ public class AnalyticsFragment extends Fragment {
                 int nowWeek = now.get(java.util.Calendar.WEEK_OF_YEAR);
                 int yearDiff = selected.get(java.util.Calendar.YEAR) - now.get(java.util.Calendar.YEAR);
                 weekOffset = (yearDiff * 52) + (selectedWeek - nowWeek);
+                int dow = selected.get(java.util.Calendar.DAY_OF_WEEK);
+                selectedDayIndex = (dow + 5) % 7; // 跳转到指定日期在周中的位置
                 refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); setupDayPies(view);
             }, cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH),
                     cal.get(java.util.Calendar.DAY_OF_MONTH)).show();
         });
 
         view.findViewById(R.id.btn_prev_week).setOnClickListener(v -> {
-            weekOffset--; refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); setupDayPies(view);
+            weekOffset--; selectedDayIndex = 0; // 过去周默认周一
+            refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); setupDayPies(view);
         });
         view.findViewById(R.id.btn_next_week).setOnClickListener(v -> {
-            if (weekOffset < 0) { weekOffset++; refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); setupDayPies(view); }
+            if (weekOffset < 0) {
+                weekOffset++;
+                if (weekOffset == 0) selectedDayIndex = -1; // 回到本周 → 重置为当天
+                else selectedDayIndex = 0;
+                refreshWeek(); setupCheckin(view); setupWeekStats(view); setupChart(view); setupDayPies(view);
+            }
         });
 
         // 4 卡片点击 → 饼图弹窗
@@ -187,6 +195,7 @@ public class AnalyticsFragment extends Fragment {
             btnToday.setLayoutParams(lp);
             btnToday.setOnClickListener(v -> {
                 weekOffset = 0;
+                selectedDayIndex = -1; // 重置 → setupChart 里自动设为今天
                 refreshWeek();
                 setupCheckin(getView());
                 setupWeekStats(getView());
@@ -306,7 +315,9 @@ public class AnalyticsFragment extends Fragment {
         int todayIdx = (cal.get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7;
         boolean isCurrentWeek = (weekOffset == 0);
 
-        if (!isCurrentWeek) selectedDayIndex = -1;
+        // 非本周时：默认周一，但不覆盖日期选择器或用户点击的选定
+        if (!isCurrentWeek && selectedDayIndex >= 7) selectedDayIndex = 0;
+        // selectedDayIndex == -1 表示需要自动定位（本周=今天，非本周=周一）
         if (selectedDayIndex < 0) selectedDayIndex = isCurrentWeek ? todayIdx : 0;
 
         List<int[]> weekly = db.getWeeklyMinutesForDates(session.getUserId(), weekDates);
