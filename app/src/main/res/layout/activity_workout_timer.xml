@@ -56,6 +56,7 @@
             android:layout_gravity="center"
             android:background="@drawable/bg_timer_inner" />
 
+        <!-- 计时文字 + 播放键 居中叠加 -->
         <LinearLayout
             android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_gravity="center" android:gravity="center"
@@ -65,18 +66,27 @@
                 android:id="@+id/tv_timer"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="00:00:00"
-                android:textColor="@color/accent" android:textSize="34sp"
+                android:textColor="@color/accent" android:textSize="30sp"
                 android:textStyle="bold" android:fontFamily="monospace" />
 
             <TextView
                 android:id="@+id/tv_timer_status"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="2dp" android:text="准备开始"
+                android:layout_marginTop="2dp" android:layout_marginBottom="8dp"
+                android:text="准备开始"
                 android:textColor="@color/text_secondary" android:textSize="12sp" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/fab_play"
+                android:layout_width="56dp" android:layout_height="56dp"
+                android:backgroundTint="@color/accent"
+                android:src="@android:drawable/ic_media_play"
+                app:tint="@color/black"
+                app:maxImageSize="28dp" />
         </LinearLayout>
     </FrameLayout>
 
-    <!-- 三按钮 -->
+    <!-- 两侧按钮 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -87,24 +97,16 @@
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab_done"
             android:layout_width="64dp" android:layout_height="64dp"
-            android:layout_marginEnd="24dp"
+            android:layout_marginEnd="12dp"
             android:backgroundTint="@color/surface_variant"
             android:src="@android:drawable/ic_menu_upload"
             app:tint="@color/accent"
             app:maxImageSize="28dp" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_play"
-            android:layout_width="80dp" android:layout_height="80dp"
-            android:backgroundTint="@color/accent"
-            android:src="@android:drawable/ic_media_play"
-            app:tint="@color/black"
-            app:maxImageSize="36dp" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab_cancel"
             android:layout_width="64dp" android:layout_height="64dp"
-            android:layout_marginStart="24dp"
+            android:layout_marginStart="12dp"
             android:backgroundTint="@color/surface_variant"
             android:src="@android:drawable/ic_delete"
             app:tint="@color/error"

@@ -44,11 +44,18 @@ public class CalorieGuideActivity extends AppCompatActivity {
             {"篮球 / 足球 / 橄榄球", "8.0"}, {"网球 / 羽毛球", "7.0"},
             {"排球 / 手球", "5.0"}, {"乒乓球 / 台球", "4.0"}, {"高尔夫 / 保龄球", "4.5"},
         });
+        addSection(root, "柔韧拉伸", new String[][]{
+            {"瑜伽 / 普拉提", "3.5"}, {"太极 / 八段锦 / 冥想", "3.0"},
+            {"拉伸 / 开肩 / 压腿", "3.0"}, {"泡沫轴 / 筋膜放松", "2.5"},
+        });
         addSection(root, "其他运动", new String[][]{
             {"拳击 / 跆拳道 / 摔跤", "10.0"}, {"击剑 / 壁球", "8.0"},
             {"滑雪 / 滑板 / 冲浪", "6.0"}, {"骑马 / 轮滑 / 溜冰", "5.5"},
-            {"瑜伽 / 普拉提", "3.5"}, {"太极 / 八段锦 / 冥想", "3.0"}, {"钓鱼", "2.5"},
+            {"钓鱼", "2.5"},
         });
+
+        // 默认值说明
+        addDefaultInfo(root);
 
         View spacer = new View(this);
         spacer.setLayoutParams(new LinearLayout.LayoutParams(dp(24), dp(24)));
@@ -175,4 +182,35 @@ public class CalorieGuideActivity extends AppCompatActivity {
     }
 
     private int dp(int d) { return (int) (d * getResources().getDisplayMetrics().density); }
+
+    private void addDefaultInfo(LinearLayout root) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        int p = dp(16);
+        card.setPadding(p, p, p, p);
+        card.setBackgroundResource(R.drawable.bg_card);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.topMargin = dp(20);
+        card.setLayoutParams(lp);
+
+        TextView t1 = new TextView(this);
+        t1.setText("未列出的运动及自定义运动");
+        t1.setTextColor(0xFFCCFF00);
+        t1.setTextSize(14);
+        t1.setTypeface(null, android.graphics.Typeface.BOLD);
+        card.addView(t1);
+
+        TextView t2 = new TextView(this);
+        t2.setText("自定义运动按类别取默认 MET 值：\n有氧运动 7.0 · 力量训练 5.0 · 柔韧拉伸 3.0\n球类运动 6.0 · 其他运动 5.0");
+        t2.setTextColor(0xFFAAAAAA);
+        t2.setTextSize(13);
+        LinearLayout.LayoutParams lp2 = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp2.topMargin = dp(8);
+        t2.setLayoutParams(lp2);
+        card.addView(t2);
+
+        root.addView(card);
+    }
 }
