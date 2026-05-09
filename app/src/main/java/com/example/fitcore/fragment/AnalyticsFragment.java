@@ -306,10 +306,8 @@ public class AnalyticsFragment extends Fragment {
         int todayIdx = (cal.get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7;
         boolean isCurrentWeek = (weekOffset == 0);
 
-        // 设置选中日期（非本周重置）
         if (!isCurrentWeek) selectedDayIndex = -1;
         if (selectedDayIndex < 0) selectedDayIndex = isCurrentWeek ? todayIdx : 0;
-        final int selIdx = selectedDayIndex;
 
         List<int[]> weekly = db.getWeeklyMinutesForDates(session.getUserId(), weekDates);
         List<BarEntry> entries = new ArrayList<>();
@@ -320,8 +318,9 @@ public class AnalyticsFragment extends Fragment {
         }
         while (entries.size() < 7) entries.add(new BarEntry(entries.size(), 0));
 
+        // 柱子颜色：仅当天加亮
         for (int i = 0; i < 7; i++) {
-            if (isCurrentWeek && i == selIdx) {
+            if (isCurrentWeek && i == todayIdx) {
                 barColors.add(Color.parseColor("#7CB342"));
             } else {
                 barColors.add(Color.parseColor("#337CB342"));
@@ -341,11 +340,11 @@ public class AnalyticsFragment extends Fragment {
         xAxis.setGranularity(1f);
         chart.animateY(500);
 
-        // 自定义星期标签 + 点击切换日期
+        // 星期标签：默认当天绿色，点击切换选中日（改变标签色+饼图，不动柱子）
         String[] labelTexts = {"一","二","三","四","五","六","日"};
         for (int i = 0; i < 7; i++) {
             dayLabels[i].setText(labelTexts[i]);
-            dayLabels[i].setTextColor(isCurrentWeek && i == selIdx
+            dayLabels[i].setTextColor(isCurrentWeek && i == selectedDayIndex
                     ? Color.parseColor("#7CB342") : Color.parseColor("#888888"));
             final int di = i;
             dayLabels[i].setOnClickListener(v -> {
@@ -355,23 +354,16 @@ public class AnalyticsFragment extends Fragment {
                     dayLabels[j].setTextColor(j == di
                             ? Color.parseColor("#7CB342") : Color.parseColor("#888888"));
                 }
-                programmaticHighlight = true;
-                chart.highlightValue(di, 0);
                 setupDayPies(getView());
             });
         }
 
-        // 高亮选中日期的柱子（程序化，不弹窗）
-        programmaticHighlight = true;
-        chart.highlightValue(selIdx, 0);
-
+        // 点击柱子 → 弹出当天运动记录
         chart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
             public void onValueSelected(com.github.mikephil.charting.data.Entry e, Highlight h) {
-                if (programmaticHighlight) {
-                    programmaticHighlight = false;
-                    return;
-                }
+                int idx = (int) e.getX();
+                if (idx >= 0 && idx < 7) showDayRecordsSheet(idx, chart);
             }
             @Override public void onNothingSelected() {}
         });
