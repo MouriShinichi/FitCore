@@ -355,11 +355,10 @@ public class AnalyticsFragment extends Fragment {
         String[] labelTexts = {"一","二","三","四","五","六","日"};
         for (int i = 0; i < 7; i++) {
             dayLabels[i].setText(labelTexts[i]);
-            dayLabels[i].setTextColor(isCurrentWeek && i == selectedDayIndex
+            dayLabels[i].setTextColor(i == selectedDayIndex
                     ? Color.parseColor("#7CB342") : Color.parseColor("#888888"));
             final int di = i;
             dayLabels[i].setOnClickListener(v -> {
-                if (!isCurrentWeek) return;
                 selectedDayIndex = di;
                 for (int j = 0; j < 7; j++) {
                     dayLabels[j].setTextColor(j == di
