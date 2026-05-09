@@ -52,37 +52,44 @@
             android:background="@drawable/bg_timer_ring" />
 
         <View
+            android:id="@+id/view_inner_circle"
             android:layout_width="200dp" android:layout_height="200dp"
             android:layout_gravity="center"
-            android:background="@drawable/bg_timer_inner" />
+            android:background="@drawable/bg_timer_inner"
+            android:clickable="true" android:focusable="true" />
 
-        <!-- 计时文字 + 播放键 居中叠加 -->
+        <!-- 计时文字 + 播放图标 居中叠加 -->
         <LinearLayout
             android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_gravity="center" android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:clickable="false">
 
             <TextView
                 android:id="@+id/tv_timer"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="00:00:00"
-                android:textColor="@color/accent" android:textSize="30sp"
+                android:textColor="@color/accent" android:textSize="32sp"
                 android:textStyle="bold" android:fontFamily="monospace" />
 
             <TextView
                 android:id="@+id/tv_timer_status"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="2dp" android:layout_marginBottom="8dp"
+                android:layout_marginTop="2dp" android:layout_marginBottom="6dp"
                 android:text="准备开始"
                 android:textColor="@color/text_secondary" android:textSize="12sp" />
 
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/fab_play"
-                android:layout_width="56dp" android:layout_height="56dp"
-                android:backgroundTint="@color/accent"
-                android:src="@android:drawable/ic_media_play"
-                app:tint="@color/black"
-                app:maxImageSize="28dp" />
+            <TextView
+                android:id="@+id/iv_play_icon"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="▶"
+                android:textColor="@color/black"
+                android:textSize="22sp"
+                android:background="@drawable/bg_accent_circle"
+                android:gravity="center"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="10dp" />
         </LinearLayout>
     </FrameLayout>
 
