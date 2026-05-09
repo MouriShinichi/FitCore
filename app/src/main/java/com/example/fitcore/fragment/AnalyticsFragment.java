@@ -50,6 +50,7 @@ public class AnalyticsFragment extends Fragment {
     private TextView tvDayPieTitle;
     private TextView[] dayLabels = new TextView[7];
     private int selectedDayIndex = -1;
+    private boolean programmaticHighlight = false;
     private java.util.Map<String, Integer> typeToCategory;
     private java.util.Map<String, String> typeToEmoji;
 
@@ -354,20 +355,23 @@ public class AnalyticsFragment extends Fragment {
                     dayLabels[j].setTextColor(j == di
                             ? Color.parseColor("#7CB342") : Color.parseColor("#888888"));
                 }
+                programmaticHighlight = true;
                 chart.highlightValue(di, 0);
                 setupDayPies(getView());
             });
         }
 
-        // 高亮选中日期的柱子
+        // 高亮选中日期的柱子（程序化，不弹窗）
+        programmaticHighlight = true;
         chart.highlightValue(selIdx, 0);
 
-        // 点击柱子 → 弹出当天记录
         chart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
             public void onValueSelected(com.github.mikephil.charting.data.Entry e, Highlight h) {
-                int idx = (int) e.getX();
-                if (idx >= 0 && idx < 7) showDayRecordsSheet(idx, chart);
+                if (programmaticHighlight) {
+                    programmaticHighlight = false;
+                    return;
+                }
             }
             @Override public void onNothingSelected() {}
         });
