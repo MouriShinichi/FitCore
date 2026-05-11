@@ -139,4 +139,3 @@ MIT License — 随意使用，无需署名的自由软件许可。
 
 ---
 
-*由 Claude Code、Cursor 和 Codex 联合构建。作为 Xiaomi MiMo Orbit 创造者激励计划的申请项目提交。*

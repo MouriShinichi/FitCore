@@ -141,4 +141,3 @@ MIT License — do whatever you want with it.
 
 ---
 
-*Built with Claude Code, Cursor, and Codex. Submitted as part of the Xiaomi MiMo Orbit Creator Incentive Program.*
