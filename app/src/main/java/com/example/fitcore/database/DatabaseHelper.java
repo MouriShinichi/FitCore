@@ -14,7 +14,7 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "fitcore.db";
-    private static final int DB_VERSION = 2;
+    private static final int DB_VERSION = 3;
 
     private static volatile DatabaseHelper instance;
 
@@ -82,7 +82,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         // v2: 添加 days_of_week 列
         db.execSQL("ALTER TABLE reminder_settings ADD COLUMN days_of_week TEXT NOT NULL DEFAULT '1,2,3,4,5,6,7'");
 
-        // 种子数据：4 个健身计划
         seedPlan(db, "推拉腿分化训练", "经典分部训练，均衡增肌",
                 "6周", "5次/周", "中级", "增肌");
         seedPlan(db, "HIIT燃脂训练", "高强度间歇燃脂计划",
@@ -91,6 +90,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "8周", "3次/周", "初级", "柔韧");
         seedPlan(db, "耐力跑步训练", "逐步提升耐力与心肺功能",
                 "6周", "4次/周", "中级", "有氧");
+        seedPlan(db, "篮球特训", "球场专项体能，提升弹跳和爆发力",
+                "8周", "4次/周", "中级", "球类");
+        seedPlan(db, "足球专项", "足球专项体能和综合技巧",
+                "8周", "4次/周", "中级", "球类");
+        seedPlan(db, "游泳训练", "提升泳姿技术和心肺耐力",
+                "6周", "3次/周", "初级", "有氧");
+        seedPlan(db, "综合体能训练", "力量、耐力、灵活性的全面计划",
+                "8周", "4次/周", "中级", "综合");
     }
 
     private void seedPlan(SQLiteDatabase db, String name, String desc,
@@ -105,10 +112,31 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.insert("fitness_plans", null, cv);
     }
 
+    private void seedPlanIfNotExists(SQLiteDatabase db, String name, String desc,
+                                      String duration, String freq, String level, String cat) {
+        Cursor c = db.rawQuery("SELECT id FROM fitness_plans WHERE name=?", new String[]{name});
+        if (!c.moveToFirst()) {
+            c.close();
+            seedPlan(db, name, desc, duration, freq, level, cat);
+        } else {
+            c.close();
+        }
+    }
+
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         if (oldVersion < 2) {
             db.execSQL("ALTER TABLE reminder_settings ADD COLUMN days_of_week TEXT NOT NULL DEFAULT '1,2,3,4,5,6,7'");
+        }
+        if (oldVersion < 3) {
+            seedPlanIfNotExists(db, "篮球特训", "球场专项体能，提升弹跳和爆发力",
+                    "8周", "4次/周", "中级", "球类");
+            seedPlanIfNotExists(db, "足球专项", "足球专项体能和综合技巧",
+                    "8周", "4次/周", "中级", "球类");
+            seedPlanIfNotExists(db, "游泳训练", "提升泳姿技术和心肺耐力",
+                    "6周", "3次/周", "初级", "有氧");
+            seedPlanIfNotExists(db, "综合体能训练", "力量、耐力、灵活性的全面计划",
+                    "8周", "4次/周", "中级", "综合");
         }
     }
 
@@ -204,6 +232,37 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         c.close();
         return null;
+    }
+
+    public void setCurrentPlan(int userId, int planId) {
+        SQLiteDatabase db = getWritableDatabase();
+        // 取消旧选择
+        ContentValues off = new ContentValues();
+        off.put("is_current", 0);
+        db.update("user_plans", off, "user_id=?", new String[]{String.valueOf(userId)});
+        // 设置新选择
+        Cursor c = db.rawQuery("SELECT id FROM user_plans WHERE user_id=? AND plan_id=?",
+                new String[]{String.valueOf(userId), String.valueOf(planId)});
+        if (c.moveToFirst()) {
+            ContentValues on = new ContentValues();
+            on.put("is_current", 1);
+            db.update("user_plans", on, "id=" + c.getInt(0), null);
+        } else {
+            ContentValues cv = new ContentValues();
+            cv.put("user_id", userId);
+            cv.put("plan_id", planId);
+            cv.put("is_current", 1);
+            cv.put("start_date", new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date()));
+            db.insert("user_plans", null, cv);
+        }
+        c.close();
+    }
+
+    public void clearCurrentPlan(int userId) {
+        ContentValues off = new ContentValues();
+        off.put("is_current", 0);
+        getWritableDatabase().update("user_plans", off, "user_id=?",
+                new String[]{String.valueOf(userId)});
     }
 
     // ========== WorkoutRecord CRUD ==========

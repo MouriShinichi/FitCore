@@ -1,9 +1,17 @@
 package com.example.fitcore;
 
+import android.Manifest;
+import android.app.AlarmManager;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
@@ -13,12 +21,14 @@ import com.example.fitcore.fragment.HomeFragment;
 import com.example.fitcore.fragment.ProfileFragment;
 import com.example.fitcore.fragment.RecordFragment;
 import com.example.fitcore.fragment.ReminderFragment;
+import com.example.fitcore.utils.NotificationHelper;
 import com.example.fitcore.utils.SessionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity {
 
     private SessionManager session;
+    private ActivityResultLauncher<String> notificationPermissionLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +41,10 @@ public class MainActivity extends AppCompatActivity {
             finish();
             return;
         }
+
+        NotificationHelper.createChannel(this);
+        setupPermissionLaunchers();
+        checkAndRequestPermissions();
 
         // 处理系统栏内边距，防止内容被系统导航栏遮挡
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root_layout), (v, insets) -> {
@@ -75,6 +89,36 @@ public class MainActivity extends AppCompatActivity {
         });
 
         bottomNav.setSelectedItemId(R.id.nav_home);
+    }
+
+    private void setupPermissionLaunchers() {
+        notificationPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                granted -> {
+                    if (!granted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        // 用户拒绝通知权限，可再次引导
+                    }
+                });
+    }
+
+    private void checkAndRequestPermissions() {
+        // Android 13+: 请求通知权限
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            }
+        }
+
+        // Android 12+: 检查精确闹钟权限，未授权则引导用户去设置
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
+            if (alarm != null && !alarm.canScheduleExactAlarms()) {
+                Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                intent.setData(android.net.Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+            }
+        }
     }
 
     private int dp2px(int dp) {

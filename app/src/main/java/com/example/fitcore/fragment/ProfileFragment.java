@@ -49,7 +49,7 @@ public class ProfileFragment extends Fragment {
     private ActivityResultLauncher<String> pickBgImageLauncher;
 
     private File getAvatarFile() {
-        return new File(requireContext().getFilesDir(), "avatar.jpg");
+        return new File(requireContext().getFilesDir(), "avatar_" + session.getUserId() + ".jpg");
     }
 
     private boolean hasAvatar() {

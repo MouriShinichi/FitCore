@@ -1,13 +1,21 @@
 package com.example.fitcore.fragment;
 
+import android.Manifest;
+import android.app.AlarmManager;
 import android.app.TimePickerDialog;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SwitchCompat;
@@ -35,6 +43,8 @@ public class ReminderFragment extends Fragment {
     private boolean isOnceMode = true;
     private boolean onceEnabled = false, customEnabled = false;
 
+    private ActivityResultLauncher<String> notificationLauncher;
+
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
@@ -44,6 +54,17 @@ public class ReminderFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        notificationLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                granted -> {
+                    if (granted) {
+                        enableReminder(true);
+                    } else {
+                        setSwitchSafely(false);
+                        Toast.makeText(requireContext(), "需要通知权限才能发送提醒", Toast.LENGTH_SHORT).show();
+                    }
+                });
 
         db = DatabaseHelper.getInstance(requireContext());
         session = new SessionManager(requireContext());
@@ -66,12 +87,18 @@ public class ReminderFragment extends Fragment {
         // 随机语句
         loadRandomQuotes(view);
 
-        // 开关切换 → 自动保存
+        // 开关切换 → 检查权限后保存
         swReminder.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isOnceMode) onceEnabled = isChecked;
-            else customEnabled = isChecked;
-            settings.setEnabled(isChecked);
-            saveSettings();
+            if (!isChecked) {
+                // 关闭提醒不需要权限
+                if (isOnceMode) onceEnabled = false;
+                else customEnabled = false;
+                settings.setEnabled(false);
+                saveSettings();
+                return;
+            }
+            // 开启提醒：先检查权限
+            checkPermissionsThenEnable(isChecked);
         });
 
         // 模式切换
@@ -119,6 +146,37 @@ public class ReminderFragment extends Fragment {
 
     }
 
+    private void checkPermissionsThenEnable(boolean toggled) {
+        // 检查通知权限 (Android 13+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+                return;
+            }
+        }
+        // 检查精确闹钟权限 (Android 12+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            AlarmManager alarm = (AlarmManager) requireContext().getSystemService(android.content.Context.ALARM_SERVICE);
+            if (alarm != null && !alarm.canScheduleExactAlarms()) {
+                setSwitchSafely(false);
+                Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                intent.setData(android.net.Uri.parse("package:" + requireContext().getPackageName()));
+                startActivity(intent);
+                Toast.makeText(requireContext(), "请允许精确闹钟权限后再开启提醒", Toast.LENGTH_LONG).show();
+                return;
+            }
+        }
+        enableReminder(true);
+    }
+
+    private void enableReminder(boolean enabled) {
+        if (isOnceMode) onceEnabled = enabled;
+        else customEnabled = enabled;
+        settings.setEnabled(enabled);
+        saveSettings();
+    }
+
     private void saveSettings() {
         try {
             StringBuilder sb = new StringBuilder();
@@ -154,10 +212,14 @@ public class ReminderFragment extends Fragment {
         swReminder.setChecked(checked);
         settings.setEnabled(checked);
         swReminder.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isOnceMode) onceEnabled = isChecked;
-            else customEnabled = isChecked;
-            settings.setEnabled(isChecked);
-            saveSettings();
+            if (!isChecked) {
+                if (isOnceMode) onceEnabled = false;
+                else customEnabled = false;
+                settings.setEnabled(false);
+                saveSettings();
+                return;
+            }
+            checkPermissionsThenEnable(isChecked);
         });
     }
 
